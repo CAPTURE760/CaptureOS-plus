@@ -50,7 +50,7 @@ const columns = [
   },
   {
     key: 'created_at',
-    label: '创建时间 (北京时间)',
+    label: '创建时间',
     render: (item: Solution) => (
       <span className="text-gray-500 text-xs whitespace-nowrap">
         🕐 {formatBeijingTime(item.created_at)}
