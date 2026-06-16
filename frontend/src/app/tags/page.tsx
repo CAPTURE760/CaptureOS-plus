@@ -11,32 +11,87 @@ interface Tag {
   id: number;
   name: string;
   color: string | null;
+  level: number;
   description: string | null;
   created_at: string;
 }
 
+// 等级文字
+const levelLabels: Record<number, string> = {
+  1: '轻微',
+  2: '一般',
+  3: '中等',
+  4: '重要',
+  5: '严重',
+};
+
+// 标签方块组件
+function TagBlock({ tag }: { tag: Tag }) {
+  const color = tag.color || '#6B7280';
+  const level = tag.level || 1;
+
+  return (
+    <div className="flex items-center gap-3">
+      {/* 方块 */}
+      <div
+        className="relative w-12 h-8 rounded border-2 overflow-hidden"
+        style={{ borderColor: color }}
+      >
+        {/* 填充部分 */}
+        <div
+          className="absolute inset-y-0 left-0 transition-all"
+          style={{
+            width: `${(level / 5) * 100}%`,
+            backgroundColor: color,
+          }}
+        />
+        {/* 等级数字 */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+            {level}
+          </span>
+        </div>
+      </div>
+      {/* 名称 */}
+      <span className="font-medium">{tag.name}</span>
+    </div>
+  );
+}
+
 const fields = [
   { name: 'name', label: '名称', required: true },
-  { name: 'color', label: '颜色 (HEX)' },
+  { name: 'color', label: '颜色 (HEX, 如 #FF5722)' },
+  {
+    name: 'level',
+    label: '等级 (1-5)',
+    type: 'select' as const,
+    options: [
+      { value: '1', label: '1 - 轻微' },
+      { value: '2', label: '2 - 一般' },
+      { value: '3', label: '3 - 中等' },
+      { value: '4', label: '4 - 重要' },
+      { value: '5', label: '5 - 严重' },
+    ],
+  },
   { name: 'description', label: '描述', type: 'textarea' as const, rows: 3 },
 ];
 
 const columns = [
   {
     key: 'name',
-    label: '名称',
+    label: '标签',
+    render: (item: Tag) => <TagBlock tag={item} />,
+    width: '30%',
+  },
+  {
+    key: 'level',
+    label: '等级',
     render: (item: Tag) => (
-      <div className="flex items-center gap-2">
-        {item.color && (
-          <span
-            className="w-4 h-4 rounded-full inline-block border"
-            style={{ backgroundColor: item.color }}
-          />
-        )}
-        <span className="font-medium">{item.name}</span>
-      </div>
+      <span className="text-sm">
+        {levelLabels[item.level] || '一般'}
+      </span>
     ),
-    width: '25%',
+    width: '10%',
   },
   {
     key: 'description',
@@ -46,7 +101,7 @@ const columns = [
         {item.description || '-'}
       </span>
     ),
-    width: '40%',
+    width: '35%',
   },
   {
     key: 'created_at',
@@ -110,6 +165,18 @@ export default function TagsPage() {
           <span>新建标签</span>
         </button>
       </div>
+
+      {/* 标签预览 */}
+      {data && data.length > 0 && (
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">标签预览</h3>
+          <div className="flex flex-wrap gap-3">
+            {data.map((tag) => (
+              <TagBlock key={tag.id} tag={tag} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-gray-500">

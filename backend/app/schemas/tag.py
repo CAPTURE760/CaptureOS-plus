@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TagBase(BaseModel):
     name: str
     color: Optional[str] = None
+    level: int = Field(default=1, ge=1, le=5)
     description: Optional[str] = None
 
 
@@ -17,6 +18,7 @@ class TagCreate(TagBase):
 class TagUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
+    level: Optional[int] = Field(default=None, ge=1, le=5)
     description: Optional[str] = None
 
 
