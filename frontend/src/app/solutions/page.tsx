@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 
@@ -20,28 +21,42 @@ interface Solution {
 
 const fields = [
   { name: 'title', label: '标题', required: true },
-  { name: 'description', label: '描述', type: 'textarea' as const },
-  { name: 'approach', label: '方法', type: 'textarea' as const },
-  { name: 'outcome', label: '结果', type: 'textarea' as const },
+  { name: 'description', label: '描述', type: 'textarea' as const, rows: 4 },
+  { name: 'approach', label: '方法', type: 'textarea' as const, rows: 5 },
+  { name: 'outcome', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'effectiveness', label: '有效性 (1-5)', type: 'number' as const },
   { name: 'implemented_date', label: '实施日期', type: 'date' as const },
 ];
 
 const columns = [
-  { key: 'title', label: '标题' },
+  { key: 'title', label: '标题', width: '25%' },
   {
     key: 'effectiveness',
     label: '有效性',
-    render: (item: Solution) =>
-      item.effectiveness ? '⭐'.repeat(item.effectiveness) : '-',
+    render: (item: Solution) => (
+      <span>{item.effectiveness ? '⭐'.repeat(item.effectiveness) : '-'}</span>
+    ),
+    width: '15%',
   },
   {
     key: 'implemented_date',
     label: '实施日期',
-    render: (item: Solution) =>
-      item.implemented_date
-        ? new Date(item.implemented_date).toLocaleDateString('zh-CN')
-        : '-',
+    render: (item: Solution) => (
+      <span className="whitespace-nowrap">
+        📅 {item.implemented_date ? new Date(item.implemented_date).toLocaleDateString('zh-CN') : '-'}
+      </span>
+    ),
+    width: '15%',
+  },
+  {
+    key: 'created_at',
+    label: '创建时间 (北京时间)',
+    render: (item: Solution) => (
+      <span className="text-gray-500 text-xs whitespace-nowrap">
+        🕐 {formatBeijingTime(item.created_at)}
+      </span>
+    ),
+    width: '15%',
   },
 ];
 
@@ -80,37 +95,36 @@ export default function SolutionsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">解决方案</h1>
+        <div>
+          <h1 className="text-2xl font-bold">🔧 解决方案</h1>
+          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 个方案</p>
+        </div>
         <button
           onClick={() => {
             setEditingItem(null);
             setShowForm(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          新建解决方案
+          <span>➕</span>
+          <span>新建方案</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-green-500">
           <h2 className="text-lg font-semibold mb-4">
-            {editingItem ? '编辑解决方案' : '新建解决方案'}
+            {editingItem ? '✏️ 编辑方案' : '➕ 新建方案'}
           </h2>
           <EntityForm
             fields={fields}
             onSubmit={handleSubmit}
-            initialData={editingItem || {}}
-          />
-          <button
-            onClick={() => {
+            onCancel={() => {
               setShowForm(false);
               setEditingItem(null);
             }}
-            className="mt-4 text-gray-600 hover:text-gray-800"
-          >
-            取消
-          </button>
+            initialData={editingItem || {}}
+          />
         </div>
       )}
 

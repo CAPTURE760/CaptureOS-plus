@@ -146,18 +146,12 @@ export default function ProjectsPage() {
           <EntityForm
             fields={fields}
             onSubmit={handleSubmit}
-            initialData={editingItem || {}}
-          />
-          <button
-            onClick={() => {
+            onCancel={() => {
               setShowForm(false);
               setEditingItem(null);
             }}
-            className="mt-4 text-gray-600 hover:text-gray-800 flex items-center gap-1"
-          >
-            <span>❌</span>
-            <span>取消</span>
-          </button>
+            initialData={editingItem || {}}
+          />
         </div>
       )}
 

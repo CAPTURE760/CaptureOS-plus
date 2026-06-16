@@ -14,7 +14,12 @@
       "Bash(docker compose exec *)",
       "Bash(docker compose *)",
       "Bash(curl -s http://localhost:8001/api/dashboard/)",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "Read(///wsl.localhost/Ubuntu/home/oyweiyuan/CaptureOS/frontend/src/**)",
+      "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' solutions/page.tsx)",
+      "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' knowledge/page.tsx)",
+      "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' decisions/page.tsx)",
+      "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' reviews/page.tsx)"
     ]
   }
 }

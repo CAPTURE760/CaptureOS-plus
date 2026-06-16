@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 
@@ -19,21 +20,35 @@ interface Knowledge {
 
 const fields = [
   { name: 'title', label: '标题', required: true },
-  { name: 'content', label: '内容', type: 'textarea' as const },
+  { name: 'content', label: '内容', type: 'textarea' as const, rows: 8 },
   { name: 'category', label: '分类' },
   { name: 'source', label: '来源' },
   { name: 'confidence', label: '置信度 (0-1)', type: 'number' as const },
 ];
 
 const columns = [
-  { key: 'title', label: '标题' },
-  { key: 'category', label: '分类' },
-  { key: 'source', label: '来源' },
+  { key: 'title', label: '标题', width: '25%' },
+  { key: 'category', label: '分类', width: '12%' },
+  { key: 'source', label: '来源', width: '20%' },
   {
     key: 'confidence',
     label: '置信度',
-    render: (item: Knowledge) =>
-      item.confidence ? `${(item.confidence * 100).toFixed(0)}%` : '-',
+    render: (item: Knowledge) => (
+      <span className="font-mono">
+        {item.confidence ? `${(item.confidence * 100).toFixed(0)}%` : '-'}
+      </span>
+    ),
+    width: '10%',
+  },
+  {
+    key: 'created_at',
+    label: '创建时间 (北京时间)',
+    render: (item: Knowledge) => (
+      <span className="text-gray-500 text-xs whitespace-nowrap">
+        🕐 {formatBeijingTime(item.created_at)}
+      </span>
+    ),
+    width: '15%',
   },
 ];
 
@@ -72,37 +87,36 @@ export default function KnowledgePage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">知识</h1>
+        <div>
+          <h1 className="text-2xl font-bold">📚 知识库</h1>
+          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 条知识</p>
+        </div>
         <button
           onClick={() => {
             setEditingItem(null);
             setShowForm(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          新建知识
+          <span>➕</span>
+          <span>新建知识</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-purple-500">
           <h2 className="text-lg font-semibold mb-4">
-            {editingItem ? '编辑知识' : '新建知识'}
+            {editingItem ? '✏️ 编辑知识' : '➕ 新建知识'}
           </h2>
           <EntityForm
             fields={fields}
             onSubmit={handleSubmit}
-            initialData={editingItem || {}}
-          />
-          <button
-            onClick={() => {
+            onCancel={() => {
               setShowForm(false);
               setEditingItem(null);
             }}
-            className="mt-4 text-gray-600 hover:text-gray-800"
-          >
-            取消
-          </button>
+            initialData={editingItem || {}}
+          />
         </div>
       )}
 

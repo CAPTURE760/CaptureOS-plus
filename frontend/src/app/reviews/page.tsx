@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 
@@ -22,7 +23,7 @@ interface Review {
 
 const fields = [
   { name: 'title', label: '标题', required: true },
-  { name: 'event_summary', label: '事件摘要', type: 'textarea' as const },
+  { name: 'event_summary', label: '事件摘要', type: 'textarea' as const, rows: 5 },
   {
     name: 'rating',
     label: '评分 (1-5)',
@@ -40,20 +41,33 @@ const fields = [
 ];
 
 const columns = [
-  { key: 'title', label: '标题' },
+  { key: 'title', label: '标题', width: '25%' },
   {
     key: 'rating',
     label: '评分',
-    render: (item: Review) => (item.rating ? '⭐'.repeat(item.rating) : '-'),
+    render: (item: Review) => (
+      <span>{item.rating ? '⭐'.repeat(item.rating) : '-'}</span>
+    ),
+    width: '15%',
   },
-  { key: 'period', label: '周期' },
+  { key: 'period', label: '周期', width: '12%' },
   {
     key: 'review_date',
     label: '复盘日期',
-    render: (item: Review) =>
-      item.review_date
-        ? new Date(item.review_date).toLocaleDateString('zh-CN')
-        : '-',
+    render: (item: Review) => (
+      <span className="whitespace-nowrap">📅 {formatBeijingDate(item.review_date)}</span>
+    ),
+    width: '15%',
+  },
+  {
+    key: 'created_at',
+    label: '创建时间 (北京时间)',
+    render: (item: Review) => (
+      <span className="text-gray-500 text-xs whitespace-nowrap">
+        🕐 {formatBeijingTime(item.created_at)}
+      </span>
+    ),
+    width: '15%',
   },
 ];
 
@@ -92,37 +106,36 @@ export default function ReviewsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">复盘</h1>
+        <div>
+          <h1 className="text-2xl font-bold">📝 复盘总结</h1>
+          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 次复盘</p>
+        </div>
         <button
           onClick={() => {
             setEditingItem(null);
             setShowForm(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          新建复盘
+          <span>➕</span>
+          <span>新建复盘</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-pink-500">
           <h2 className="text-lg font-semibold mb-4">
-            {editingItem ? '编辑复盘' : '新建复盘'}
+            {editingItem ? '✏️ 编辑复盘' : '➕ 新建复盘'}
           </h2>
           <EntityForm
             fields={fields}
             onSubmit={handleSubmit}
-            initialData={editingItem || {}}
-          />
-          <button
-            onClick={() => {
+            onCancel={() => {
               setShowForm(false);
               setEditingItem(null);
             }}
-            className="mt-4 text-gray-600 hover:text-gray-800"
-          >
-            取消
-          </button>
+            initialData={editingItem || {}}
+          />
         </div>
       )}
 

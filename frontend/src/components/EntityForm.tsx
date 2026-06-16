@@ -14,15 +14,19 @@ interface Field {
 interface EntityFormProps {
   fields: Field[];
   onSubmit: (data: Record<string, unknown>) => void;
+  onCancel?: () => void;
   initialData?: Record<string, unknown>;
   submitLabel?: string;
+  cancelLabel?: string;
 }
 
 export default function EntityForm({
   fields,
   onSubmit,
+  onCancel,
   initialData = {},
   submitLabel = '保存',
+  cancelLabel = '取消',
 }: EntityFormProps) {
   const [formData, setFormData] = useState<Record<string, unknown>>(initialData);
 
@@ -99,12 +103,25 @@ export default function EntityForm({
           )}
         </div>
       ))}
-      <button
-        type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        {submitLabel}
-      </button>
+      <div className="flex gap-3 pt-2">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          <span>✅</span>
+          <span>{submitLabel}</span>
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+          >
+            <span>❌</span>
+            <span>{cancelLabel}</span>
+          </button>
+        )}
+      </div>
     </form>
   );
 }

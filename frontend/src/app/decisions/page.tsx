@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 
@@ -21,28 +22,42 @@ interface Decision {
 
 const fields = [
   { name: 'title', label: '标题', required: true },
-  { name: 'background', label: '背景', type: 'textarea' as const },
-  { name: 'reason', label: '理由', type: 'textarea' as const },
-  { name: 'result', label: '结果', type: 'textarea' as const },
+  { name: 'background', label: '背景', type: 'textarea' as const, rows: 5 },
+  { name: 'reason', label: '理由', type: 'textarea' as const, rows: 5 },
+  { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'decision_date', label: '决策日期', type: 'date' as const },
   { name: 'confidence', label: '置信度 (0-1)', type: 'number' as const },
 ];
 
 const columns = [
-  { key: 'title', label: '标题' },
+  { key: 'title', label: '标题', width: '25%' },
   {
     key: 'confidence',
     label: '置信度',
-    render: (item: Decision) =>
-      item.confidence ? `${(item.confidence * 100).toFixed(0)}%` : '-',
+    render: (item: Decision) => (
+      <span className="font-mono">
+        {item.confidence ? `${(item.confidence * 100).toFixed(0)}%` : '-'}
+      </span>
+    ),
+    width: '12%',
   },
   {
     key: 'decision_date',
     label: '决策日期',
-    render: (item: Decision) =>
-      item.decision_date
-        ? new Date(item.decision_date).toLocaleDateString('zh-CN')
-        : '-',
+    render: (item: Decision) => (
+      <span className="whitespace-nowrap">📅 {formatBeijingDate(item.decision_date)}</span>
+    ),
+    width: '15%',
+  },
+  {
+    key: 'created_at',
+    label: '创建时间 (北京时间)',
+    render: (item: Decision) => (
+      <span className="text-gray-500 text-xs whitespace-nowrap">
+        🕐 {formatBeijingTime(item.created_at)}
+      </span>
+    ),
+    width: '15%',
   },
 ];
 
@@ -81,37 +96,36 @@ export default function DecisionsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">决策</h1>
+        <div>
+          <h1 className="text-2xl font-bold">🎯 决策记录</h1>
+          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 条决策</p>
+        </div>
         <button
           onClick={() => {
             setEditingItem(null);
             setShowForm(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          新建决策
+          <span>➕</span>
+          <span>新建决策</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-indigo-500">
           <h2 className="text-lg font-semibold mb-4">
-            {editingItem ? '编辑决策' : '新建决策'}
+            {editingItem ? '✏️ 编辑决策' : '➕ 新建决策'}
           </h2>
           <EntityForm
             fields={fields}
             onSubmit={handleSubmit}
-            initialData={editingItem || {}}
-          />
-          <button
-            onClick={() => {
+            onCancel={() => {
               setShowForm(false);
               setEditingItem(null);
             }}
-            className="mt-4 text-gray-600 hover:text-gray-800"
-          >
-            取消
-          </button>
+            initialData={editingItem || {}}
+          />
         </div>
       )}
 
