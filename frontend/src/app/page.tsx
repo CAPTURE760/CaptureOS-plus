@@ -71,6 +71,8 @@ export default function DashboardPage() {
               {type === 'projects' && '📁 最近项目'}
               {type === 'experiences' && '💡 最近经验'}
               {type === 'issues' && '⚠️ 最近问题'}
+              {type === 'solutions' && '🔧 最近解决方案'}
+              {type === 'knowledge' && '📚 最近知识'}
               {type === 'decisions' && '🎯 最近决策'}
               {type === 'reviews' && '📝 最近复盘'}
             </h3>

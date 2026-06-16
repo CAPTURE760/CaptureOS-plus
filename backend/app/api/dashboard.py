@@ -48,6 +48,8 @@ async def get_dashboard(db: AsyncSession = Depends(get_db)):
         ("projects", Project, Project.created_at),
         ("experiences", Experience, Experience.created_at),
         ("issues", Issue, Issue.created_at),
+        ("solutions", Solution, Solution.created_at),
+        ("knowledge", Knowledge, Knowledge.created_at),
         ("decisions", Decision, Decision.created_at),
         ("reviews", Review, Review.created_at),
     ]:
