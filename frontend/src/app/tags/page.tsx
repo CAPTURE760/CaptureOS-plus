@@ -58,12 +58,29 @@ function TagBlock({ tag }: { tag: Tag }) {
   );
 }
 
+// 预选颜色
+const presetColors = [
+  { value: '#EF4444', label: '🔴 红色 - 紧急/Bug' },
+  { value: '#F97316', label: '🟠 橙色 - 警告' },
+  { value: '#EAB308', label: '🟡 黄色 - 注意' },
+  { value: '#22C55E', label: '🟢 绿色 - 正常/完成' },
+  { value: '#3B82F6', label: '🔵 蓝色 - 信息/进行中' },
+  { value: '#8B5CF6', label: '🟣 紫色 - 知识/学习' },
+  { value: '#EC4899', label: '🩷 粉色 - 创意/想法' },
+  { value: '#6B7280', label: '⚪ 灰色 - 归档/其他' },
+];
+
 const fields = [
   { name: 'name', label: '名称', required: true },
-  { name: 'color', label: '颜色 (HEX, 如 #FF5722)' },
+  {
+    name: 'color',
+    label: '颜色',
+    type: 'select' as const,
+    options: presetColors,
+  },
   {
     name: 'level',
-    label: '等级 (1-5)',
+    label: '等级',
     type: 'select' as const,
     options: [
       { value: '1', label: '1 - 轻微' },
