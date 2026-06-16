@@ -100,10 +100,12 @@ export default function TagPicker({ entityType, entityId, onClose, onUpdated }: 
   };
 
   // 移除标签
-  const handleRemove = async (entityTagId: number) => {
-    await fetchAPI(`/tags/unassign/${entityTagId}`, { method: 'DELETE' });
-    mutateEntityTags();
-    onUpdated();
+  const handleRemove = async (entityTagId: number, tagName: string) => {
+    if (confirm(`确定要移除标签 "${tagName}" 吗？`)) {
+      await fetchAPI(`/tags/unassign/${entityTagId}`, { method: 'DELETE' });
+      mutateEntityTags();
+      onUpdated();
+    }
   };
 
   return (
@@ -129,7 +131,7 @@ export default function TagPicker({ entityType, entityId, onClose, onUpdated }: 
                       key={et.id}
                       tag={tag}
                       removable
-                      onClick={() => handleRemove(et.id)}
+                      onClick={() => handleRemove(et.id, tag.name)}
                     />
                   );
                 })}
