@@ -65,6 +65,15 @@ async def assign_tag(data: EntityTagCreate, db: AsyncSession = Depends(get_db)):
     return db_entity_tag
 
 
+@router.get("/entity/{entity_type}", response_model=list[EntityTagResponse])
+async def list_entity_tags_by_type(entity_type: str, db: AsyncSession = Depends(get_db)):
+    """获取某类型所有实体的标签关系"""
+    result = await db.execute(
+        select(EntityTag).where(EntityTag.entity_type == entity_type)
+    )
+    return result.scalars().all()
+
+
 @router.get("/entity/{entity_type}/{entity_id}", response_model=list[TagResponse])
 async def get_entity_tags(entity_type: str, entity_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

@@ -23,7 +23,8 @@
       "Bash(sed -i 's/<EntityList/<EntityList entityType=\"experience\"/g' experiences/page.tsx)",
       "Bash(sed -i 's/<EntityList/<EntityList entityType=\"issue\"/g' issues/page.tsx)",
       "Bash(sed -i 's/<EntityList/<EntityList entityType=\"solution\"/g' solutions/page.tsx)",
-      "Bash(sed -i 's/<EntityList/<EntityList entityType=\"knowledge\"/g' knowledge/page.tsx)"
+      "Bash(sed -i 's/<EntityList/<EntityList entityType=\"knowledge\"/g' knowledge/page.tsx)",
+      "Bash(curl -s http://localhost:8001/api/tags/entity/project)"
     ]
   }
 }
