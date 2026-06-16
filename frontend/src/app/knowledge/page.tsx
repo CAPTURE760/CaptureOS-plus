@@ -120,7 +120,7 @@ export default function KnowledgePage() {
         </div>
       )}
 
-      <EntityList
+      <EntityList entityType="knowledge"
         data={data || []}
         columns={columns}
         onEdit={(item) => {
@@ -128,6 +128,7 @@ export default function KnowledgePage() {
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );

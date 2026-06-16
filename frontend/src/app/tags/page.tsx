@@ -212,7 +212,7 @@ export default function TagsPage() {
         </div>
       )}
 
-      <EntityList
+      <EntityList entityType="tag"
         data={data || []}
         columns={columns}
         onEdit={(item) => {
@@ -220,6 +220,7 @@ export default function TagsPage() {
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );

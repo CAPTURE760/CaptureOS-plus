@@ -130,7 +130,7 @@ export default function IssuesPage() {
         </div>
       )}
 
-      <EntityList
+      <EntityList entityType="issue"
         data={data || []}
         columns={columns}
         onEdit={(item) => {
@@ -138,6 +138,7 @@ export default function IssuesPage() {
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );

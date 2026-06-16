@@ -19,7 +19,11 @@
       "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' solutions/page.tsx)",
       "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' knowledge/page.tsx)",
       "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' decisions/page.tsx)",
-      "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' reviews/page.tsx)"
+      "Bash(sed -i '/<EntityForm/{N;s/<EntityForm\\\\n.*fields={fields}\\\\n.*onSubmit={handleSubmit}\\\\n.*initialData={ editingItem || {} }\\\\n.*\\\\/>/<EntityForm\\\\n            fields={fields}\\\\n            onSubmit={handleSubmit}\\\\n            onCancel={\\(\\) => {\\\\n              setShowForm\\(false\\);\\\\n            }}\\\\n            initialData={ editingItem || {} }\\\\n          \\\\/>/}' reviews/page.tsx)",
+      "Bash(sed -i 's/<EntityList/<EntityList entityType=\"experience\"/g' experiences/page.tsx)",
+      "Bash(sed -i 's/<EntityList/<EntityList entityType=\"issue\"/g' issues/page.tsx)",
+      "Bash(sed -i 's/<EntityList/<EntityList entityType=\"solution\"/g' solutions/page.tsx)",
+      "Bash(sed -i 's/<EntityList/<EntityList entityType=\"knowledge\"/g' knowledge/page.tsx)"
     ]
   }
 }

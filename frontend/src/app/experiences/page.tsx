@@ -138,7 +138,7 @@ export default function ExperiencesPage() {
         </div>
       )}
 
-      <EntityList
+      <EntityList entityType="experience"
         data={data || []}
         columns={columns}
         onEdit={(item) => {
@@ -146,6 +146,7 @@ export default function ExperiencesPage() {
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );

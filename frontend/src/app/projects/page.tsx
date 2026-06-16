@@ -158,11 +158,13 @@ export default function ProjectsPage() {
       <EntityList
         data={data || []}
         columns={columns}
+        entityType="project"
         onEdit={(item) => {
           setEditingItem(item);
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );

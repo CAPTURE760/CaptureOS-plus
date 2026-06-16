@@ -129,7 +129,7 @@ export default function DecisionsPage() {
         </div>
       )}
 
-      <EntityList
+      <EntityList entityType="decision"
         data={data || []}
         columns={columns}
         onEdit={(item) => {
@@ -137,6 +137,7 @@ export default function DecisionsPage() {
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );

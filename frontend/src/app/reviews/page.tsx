@@ -139,7 +139,7 @@ export default function ReviewsPage() {
         </div>
       )}
 
-      <EntityList
+      <EntityList entityType="review"
         data={data || []}
         columns={columns}
         onEdit={(item) => {
@@ -147,6 +147,7 @@ export default function ReviewsPage() {
           setShowForm(true);
         }}
         onDelete={handleDelete}
+        onRefresh={() => mutate()}
       />
     </div>
   );
