@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 
@@ -20,26 +21,52 @@ interface Experience {
 
 const fields = [
   { name: 'title', label: '标题', required: true },
-  { name: 'summary', label: '摘要', type: 'textarea' as const },
-  { name: 'context', label: '背景', type: 'textarea' as const },
-  { name: 'result', label: '结果', type: 'textarea' as const },
-  { name: 'lesson', label: '教训', type: 'textarea' as const },
+  { name: 'summary', label: '摘要', type: 'textarea' as const, rows: 4 },
+  { name: 'context', label: '背景', type: 'textarea' as const, rows: 5 },
+  { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
+  { name: 'lesson', label: '教训', type: 'textarea' as const, rows: 5 },
   { name: 'event_date', label: '事件日期', type: 'date' as const },
 ];
 
 const columns = [
-  { key: 'title', label: '标题' },
-  { key: 'summary', label: '摘要' },
+  { key: 'title', label: '标题', width: '20%' },
+  {
+    key: 'summary',
+    label: '摘要',
+    render: (item: Experience) => (
+      <span className="line-clamp-2 text-gray-600" title={item.summary || ''}>
+        {item.summary || '-'}
+      </span>
+    ),
+    width: '25%',
+  },
+  {
+    key: 'lesson',
+    label: '教训',
+    render: (item: Experience) => (
+      <span className="line-clamp-2 text-orange-600" title={item.lesson || ''}>
+        {item.lesson || '-'}
+      </span>
+    ),
+    width: '25%',
+  },
   {
     key: 'event_date',
     label: '事件日期',
-    render: (item: Experience) =>
-      item.event_date ? new Date(item.event_date).toLocaleDateString('zh-CN') : '-',
+    render: (item: Experience) => (
+      <span className="whitespace-nowrap">📅 {formatBeijingDate(item.event_date)}</span>
+    ),
+    width: '12%',
   },
   {
     key: 'created_at',
-    label: '创建时间',
-    render: (item: Experience) => new Date(item.created_at).toLocaleDateString('zh-CN'),
+    label: '创建时间 (北京时间)',
+    render: (item: Experience) => (
+      <span className="text-gray-500 text-xs whitespace-nowrap">
+        🕐 {formatBeijingTime(item.created_at)}
+      </span>
+    ),
+    width: '15%',
   },
 ];
 
@@ -78,22 +105,26 @@ export default function ExperiencesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">经验</h1>
+        <div>
+          <h1 className="text-2xl font-bold">💡 经验管理</h1>
+          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 条经验</p>
+        </div>
         <button
           onClick={() => {
             setEditingItem(null);
             setShowForm(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          新建经验
+          <span>➕</span>
+          <span>新建经验</span>
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-yellow-500">
           <h2 className="text-lg font-semibold mb-4">
-            {editingItem ? '编辑经验' : '新建经验'}
+            {editingItem ? '✏️ 编辑经验' : '➕ 新建经验'}
           </h2>
           <EntityForm
             fields={fields}
@@ -105,9 +136,10 @@ export default function ExperiencesPage() {
               setShowForm(false);
               setEditingItem(null);
             }}
-            className="mt-4 text-gray-600 hover:text-gray-800"
+            className="mt-4 text-gray-600 hover:text-gray-800 flex items-center gap-1"
           >
-            取消
+            <span>❌</span>
+            <span>取消</span>
           </button>
         </div>
       )}

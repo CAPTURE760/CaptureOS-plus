@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import BeijingTime from './BeijingTime';
 
 const menuItems = [
   { href: '/', label: '仪表盘', icon: '📊' },
@@ -26,7 +27,10 @@ export default function Sidebar() {
         <h1 className="text-xl font-bold">CaptureOS</h1>
         <p className="text-sm text-gray-400">个人资产管理系统</p>
       </div>
-      <nav className="flex-1 p-4">
+
+      <BeijingTime />
+
+      <nav className="flex-1 p-4 overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.href}

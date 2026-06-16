@@ -8,6 +8,7 @@ interface Field {
   type?: 'text' | 'textarea' | 'select' | 'date' | 'number';
   options?: { value: string; label: string }[];
   required?: boolean;
+  rows?: number;
 }
 
 interface EntityFormProps {
@@ -48,8 +49,9 @@ export default function EntityForm({
               value={(formData[field.name] as string) || ''}
               onChange={(e) => handleChange(field.name, e.target.value)}
               required={field.required}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[80px]"
+              rows={field.rows || 4}
+              placeholder={`请输入${field.label}...`}
             />
           ) : field.type === 'select' ? (
             <select
@@ -92,6 +94,7 @@ export default function EntityForm({
               onChange={(e) => handleChange(field.name, e.target.value)}
               required={field.required}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder={`请输入${field.label}...`}
             />
           )}
         </div>

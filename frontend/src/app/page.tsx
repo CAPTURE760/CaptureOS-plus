@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime } from '@/lib/time';
 
 interface DashboardData {
   counts: Record<string, number>;
@@ -29,14 +30,19 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">仪表盘</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">仪表盘</h1>
+        <div className="text-sm text-gray-500">
+          更新于 {formatBeijingTime(new Date().toISOString())}
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
         {statCards.map((stat) => (
           <div
             key={stat.label}
-            className={`${stat.color} text-white p-4 rounded-lg shadow`}
+            className={`${stat.color} text-white p-4 rounded-lg shadow hover:scale-105 transition-transform`}
           >
             <div className="text-2xl mb-1">{stat.icon}</div>
             <div className="text-3xl font-bold">{stat.value}</div>
@@ -47,11 +53,11 @@ export default function DashboardPage() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
           <div className="text-sm text-gray-500">进行中的项目</div>
           <div className="text-2xl font-bold text-blue-600">{counts.active_projects || 0}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
           <div className="text-sm text-gray-500">待解决的问题</div>
           <div className="text-2xl font-bold text-red-600">{counts.open_issues || 0}</div>
         </div>
@@ -62,21 +68,21 @@ export default function DashboardPage() {
         {Object.entries(recent).map(([type, items]) => (
           <div key={type} className="bg-white p-4 rounded-lg shadow">
             <h3 className="font-semibold mb-3 capitalize">
-              {type === 'projects' && '最近项目'}
-              {type === 'experiences' && '最近经验'}
-              {type === 'issues' && '最近问题'}
-              {type === 'decisions' && '最近决策'}
-              {type === 'reviews' && '最近复盘'}
+              {type === 'projects' && '📁 最近项目'}
+              {type === 'experiences' && '💡 最近经验'}
+              {type === 'issues' && '⚠️ 最近问题'}
+              {type === 'decisions' && '🎯 最近决策'}
+              {type === 'reviews' && '📝 最近复盘'}
             </h3>
             {items.length === 0 ? (
               <p className="text-gray-500 text-sm">暂无数据</p>
             ) : (
               <ul className="space-y-2">
                 {items.map((item) => (
-                  <li key={item.id} className="text-sm border-b pb-2 last:border-b-0">
-                    <div className="font-medium">{item.title}</div>
+                  <li key={item.id} className="text-sm border-b pb-2 last:border-b-0 hover:bg-gray-50 p-2 rounded">
+                    <div className="font-medium truncate" title={item.title}>{item.title}</div>
                     <div className="text-gray-500 text-xs">
-                      {new Date(item.created_at).toLocaleDateString('zh-CN')}
+                      🕐 {formatBeijingTime(item.created_at)}
                     </div>
                   </li>
                 ))}
