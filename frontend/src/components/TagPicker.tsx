@@ -62,14 +62,23 @@ function TagBlockSmall({ tag, onClick, removable }: {
 
 export default function TagPicker({ entityType, entityId, onClose, onUpdated }: TagPickerProps) {
   const { data: allTags, mutate: mutateTags } = useSWR<Tag[]>('/tags/', fetchAPI);
-  const { data: entityTags, mutate: mutateEntityTags } = useSWR<EntityTag[]>(
-    `/tags/entity/${entityType}/${entityId}`,
+
+  // 获取实体的标签关系（EntityTag[]）
+  const { data: entityTagRelations, mutate: mutateEntityTags } = useSWR<EntityTag[]>(
+    `/tags/entity/${entityType}`,
     fetchAPI
   );
+
   const [selectedTagId, setSelectedTagId] = useState<string>('');
 
+  // 过滤出当前实体的标签关系
+  const currentEntityTags = entityTagRelations?.filter((et) => et.entity_id === entityId) || [];
+
   // 已打标签的 ID 列表
-  const assignedTagIds = entityTags?.map((et) => et.tag_id) || [];
+  const assignedTagIds = currentEntityTags.map((et) => et.tag_id);
+
+  // 已打的标签对象列表
+  const assignedTags = allTags?.filter((t) => assignedTagIds.includes(t.id)) || [];
 
   // 可添加的标签（排除已打的）
   const availableTags = allTags?.filter((t) => !assignedTagIds.includes(t.id)) || [];
@@ -87,7 +96,6 @@ export default function TagPicker({ entityType, entityId, onClose, onUpdated }: 
     });
     setSelectedTagId('');
     mutateEntityTags();
-    mutateTags();
     onUpdated();
   };
 
@@ -111,9 +119,9 @@ export default function TagPicker({ entityType, entityId, onClose, onUpdated }: 
           {/* 已打标签 */}
           <div className="mb-4">
             <h4 className="text-sm font-medium text-gray-500 mb-2">已打标签</h4>
-            {entityTags && entityTags.length > 0 ? (
+            {assignedTags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {entityTags.map((et) => {
+                {currentEntityTags.map((et) => {
                   const tag = allTags?.find((t) => t.id === et.tag_id);
                   if (!tag) return null;
                   return (
