@@ -1,5 +1,5 @@
 """Timeline API — 支持 7 种实体 + 链路聚合。"""
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
@@ -12,46 +12,35 @@ from app.models.experience import Experience
 from app.models.issue import Issue
 from app.models.knowledge import Knowledge
 from app.models.project import Project
-from app.models.relation import Relation
+from app.models.relation import Relation, RelationType
 from app.models.review import Review
 from app.models.solution import Solution
 
 router = APIRouter(prefix="/timeline", tags=["timeline"])
 
-# Union-Find: 用于链路聚合
-_parent: dict[str, str] = {}
-
-
-def _find(x: str) -> str:
-    if x not in _parent:
-        _parent[x] = x
-    while _parent[x] != x:
-        _parent[x] = _parent[_parent[x]]
-        x = _parent[x]
-    return x
-
-
-def _union(a: str, b: str) -> None:
-    ra, rb = _find(a), _find(b)
-    if ra != rb:
-        _parent[ra] = rb
-
-
-# 链路聚合用的关系类型（这些关系能构成链路）
+# 链路聚合用的关系类型
 CHAIN_RELATION_TYPES = {"solved_by", "caused_by", "learned_from", "follows", "part_of", "related_to"}
 
+# 所有实体配置：(模型, 日期字段名, 类型名)
+ENTITY_CONFIGS = [
+    (Project, "start_date", "project"),
+    (Experience, "event_date", "experience"),
+    (Issue, "discovered_date", "issue"),
+    (Solution, "implemented_date", "solution"),
+    (Knowledge, "created_at", "knowledge"),
+    (Decision, "decision_date", "decision"),
+    (Review, "review_date", "review"),
+]
 
-def _collect_events(
-    model, date_field, entity_type_name: str, start_date, end_date
-) -> list[dict[str, Any]]:
-    """从单个模型收集时间线事件。"""
-    query = select(model)
-    if start_date and date_field is not None:
-        query = query.where(date_field >= start_date)
-    if end_date and date_field is not None:
-        query = query.where(date_field <= end_date)
-    # 同步查询需要在调用方执行，这里只构建查询
-    return query
+
+def _get_date(item, date_field_name: str) -> date | None:
+    """安全获取实体日期。"""
+    d = getattr(item, date_field_name, None)
+    if d is None and hasattr(item, "created_at"):
+        d = item.created_at
+        if hasattr(d, "date"):
+            d = d.date()
+    return d
 
 
 @router.get("/")
@@ -63,46 +52,35 @@ async def get_timeline(
 ) -> list[dict[str, Any]]:
     events = []
 
-    # (模型, 日期字段, 类型名, 额外字段提取器)
-    entity_configs = [
-        (Project, Project.start_date, "project", lambda i: {"status": i.status}),
-        (Experience, Experience.event_date, "experience", lambda i: {}),
-        (Issue, Issue.discovered_date, "issue", lambda i: {"status": i.status}),
-        (Solution, Solution.implemented_date, "solution", lambda i: {"effectiveness": i.effectiveness}),
-        (Knowledge, Knowledge.created_at, "knowledge", lambda i: {}),
-        (Decision, Decision.decision_date, "decision", lambda i: {}),
-        (Review, Review.review_date, "review", lambda i: {"rating": i.rating}),
-    ]
-
-    for model, date_field, etype, extra_fn in entity_configs:
+    for model, date_field_name, etype in ENTITY_CONFIGS:
         if entity_type and etype != entity_type:
             continue
 
         query = select(model)
-        if start_date and date_field is not None:
-            query = query.where(date_field >= start_date)
-        if end_date and date_field is not None:
-            query = query.where(date_field <= end_date)
-
         result = await db.execute(query)
         for item in result.scalars().all():
-            # 日期回退：优先用业务日期，回退到 created_at
-            d = None
-            if date_field is not None:
-                d = getattr(item, date_field.name, None)
-            if d is None:
-                d = item.created_at.date() if hasattr(item, "created_at") else None
+            d = _get_date(item, date_field_name)
+            if start_date and d and d < start_date:
+                continue
+            if end_date and d and d > end_date:
+                continue
 
-            entry = {
+            entry: dict[str, Any] = {
                 "entity_type": etype,
                 "entity_id": item.id,
                 "title": item.title,
-                "date": d,
+                "date": d.isoformat() if d else None,
             }
-            entry.update(extra_fn(item))
+            # 附加额外字段
+            if hasattr(item, "status"):
+                entry["status"] = item.status
+            if hasattr(item, "rating") and item.rating:
+                entry["rating"] = item.rating
+            if hasattr(item, "effectiveness") and item.effectiveness:
+                entry["effectiveness"] = item.effectiveness
             events.append(entry)
 
-    events.sort(key=lambda x: x["date"] or date.min, reverse=True)
+    events.sort(key=lambda x: x["date"] or "0000-01-01", reverse=True)
     return events
 
 
@@ -112,88 +90,70 @@ async def get_timeline_chains(
     end_date: date | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
-    """链路聚合时间线。
-
-    逻辑：
-    1. 查所有 relations 表中属于链路类型的关系
-    2. 用 Union-Find 把有关系的实体合并成组
-    3. 每个组 = 一条链路，取组内最晚日期的实体作为代表
-    4. 没有被合并的实体 = 孤立事件
-    """
-    global _parent
-    _parent.clear()
-
-    # 收集所有有日期的实体
-    all_entities: dict[tuple[str, int], dict] = {}  # (type, id) → event dict
-
-    entity_configs = [
-        (Project, Project.start_date, "project"),
-        (Experience, Experience.event_date, "experience"),
-        (Issue, Issue.discovered_date, "issue"),
-        (Solution, Solution.implemented_date, "solution"),
-        (Knowledge, Knowledge.created_at, "knowledge"),
-        (Decision, Decision.decision_date, "decision"),
-        (Review, Review.review_date, "review"),
-    ]
-
-    for model, date_field, etype in entity_configs:
+    """链路聚合时间线。"""
+    # 1. 收集所有实体
+    all_entities: dict[str, dict] = {}
+    for model, date_field_name, etype in ENTITY_CONFIGS:
         query = select(model)
-        if start_date and date_field is not None:
-            query = query.where(date_field >= start_date)
-        if end_date and date_field is not None:
-            query = query.where(date_field <= end_date)
-
         result = await db.execute(query)
         for item in result.scalars().all():
-            d = None
-            if date_field is not None:
-                d = getattr(item, date_field.name, None)
-            if d is None:
-                d = item.created_at.date() if hasattr(item, "created_at") else None
-
-            key = (etype, item.id)
+            d = _get_date(item, date_field_name)
+            if start_date and d and d < start_date:
+                continue
+            if end_date and d and d > end_date:
+                continue
+            key = f"{etype}:{item.id}"
             all_entities[key] = {
                 "entity_type": etype,
                 "entity_id": item.id,
                 "title": item.title,
-                "date": d,
+                "date": d.isoformat() if d else None,
             }
-            _parent[f"{etype}:{item.id}"] = f"{etype}:{item.id}"
 
-    # 查链路关系
-    from app.models.relation import RelationType
+    # 2. 查链路关系，用 Union-Find 分组
+    parent: dict[str, str] = {}
 
+    def find(x: str) -> str:
+        if x not in parent:
+            parent[x] = x
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: str, b: str) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    # 初始化所有实体为独立组
+    for key in all_entities:
+        parent[key] = key
+
+    # 查关系
     type_result = await db.execute(select(RelationType))
     type_map = {rt.id: rt.name for rt in type_result.scalars().all()}
-
-    # 只查链路类型的关系
     chain_type_ids = [tid for tid, name in type_map.items() if name in CHAIN_RELATION_TYPES]
+
     if chain_type_ids:
         rel_query = select(Relation).where(Relation.relation_type_id.in_(chain_type_ids))
-        # 日期过滤
-        if start_date:
-            rel_query = rel_query.where(Relation.created_at >= start_date)
-        if end_date:
-            rel_query = rel_query.where(Relation.created_at <= end_date)
-
         rel_result = await db.execute(rel_query)
         for rel in rel_result.scalars().all():
             src = f"{rel.source_type}:{rel.source_id}"
             tgt = f"{rel.target_type}:{rel.target_id}"
-            if src in _parent and tgt in _parent:
-                _union(src, tgt)
+            if src in parent and tgt in parent:
+                union(src, tgt)
 
-    # 分组
+    # 3. 按根节点分组
     groups: dict[str, list[dict]] = {}
-    for key_str, entity in all_entities.items():
-        root = _find(key_str)
+    for key, entity in all_entities.items():
+        root = find(key)
         groups.setdefault(root, []).append(entity)
 
-    # 构建结果
+    # 4. 构建结果
     chains = []
-    for root, entities in groups.items():
+    for entities in groups.values():
         if len(entities) == 1:
-            # 孤立事件
             e = entities[0]
             chains.append({
                 "type": "single",
@@ -202,17 +162,17 @@ async def get_timeline_chains(
                 "entity": e,
             })
         else:
-            # 链路：找问题作为标题，取最晚日期
             issues = [e for e in entities if e["entity_type"] == "issue"]
             title = issues[0]["title"] if issues else entities[0]["title"]
-            latest_date = max((e["date"] for e in entities if e["date"]), default=None)
+            dates = [e["date"] for e in entities if e["date"]]
+            latest_date = max(dates) if dates else None
             chains.append({
                 "type": "chain",
                 "title": title,
                 "date": latest_date,
                 "entity_count": len(entities),
-                "entities": sorted(entities, key=lambda x: x["date"] or date.min),
+                "entities": sorted(entities, key=lambda x: x["date"] or "0000-01-01"),
             })
 
-    chains.sort(key=lambda x: x["date"] or date.min, reverse=True)
+    chains.sort(key=lambda x: x["date"] or "0000-01-01", reverse=True)
     return chains
