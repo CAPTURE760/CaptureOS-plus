@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
@@ -72,6 +73,7 @@ const columns = [
 ];
 
 export default function ReviewsPage() {
+  const router = useRouter();
   const { data, error, isLoading, mutate } = useSWR<Review[]>('/reviews/', fetchAPI);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Review | null>(null);
@@ -142,6 +144,7 @@ export default function ReviewsPage() {
       <EntityList entityType="review"
         data={data || []}
         columns={columns}
+        onView={(item) => router.push(`/reviews/${item.id}`)}
         onEdit={(item) => {
           setEditingItem(item);
           setShowForm(true);

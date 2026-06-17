@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
@@ -88,6 +89,7 @@ const columns = [
 ];
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const { data, error, isLoading, mutate } = useSWR<Project[]>('/projects/', fetchAPI);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Project | null>(null);
@@ -159,6 +161,7 @@ export default function ProjectsPage() {
         data={data || []}
         columns={columns}
         entityType="project"
+        onView={(item) => router.push(`/projects/${item.id}`)}
         onEdit={(item) => {
           setEditingItem(item);
           setShowForm(true);

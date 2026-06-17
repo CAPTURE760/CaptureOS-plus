@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker">
 </p>
 
-> 一个全栈个人知识与资产管理平台，帮助你系统化地记录、管理和复盘工作与学习中的各类信息。支持一键 Docker Compose 部署，开箱即用。
+> 一个全栈个人知识与资产管理平台，帮助你系统化地记录、关联、管理和复盘工作与学习中的各类信息。支持一键 Docker Compose 部署，开箱即用。
 
 ---
 
@@ -20,6 +20,7 @@
 - 踩过的坑没有总结，同样的错误反复出现
 - 学到的知识散落在各处，需要时找不到
 - 重要决策的过程和理由没有保存，事后无法复盘
+- 问题、方案、知识、决策之间缺少关联，信息成为孤岛
 
 **CaptureOS** 就是为了解决这些问题而设计的。它是一个 **个人资产管理系统**，让你能够：
 
@@ -30,6 +31,7 @@
 - 📚 建立个人知识库
 - 🎯 记录重要决策的过程
 - 📝 定期复盘和持续改进
+- 🔗 **将所有实体关联起来，形成完整的成长链路**
 
 ---
 
@@ -47,14 +49,23 @@
 | 🎯 **决策记录** | 记录决策背景、选项、理由和最终结果 |
 | 📝 **复盘总结** | 记录复盘摘要、成功/失败因素和改进措施 |
 
+### 关联系统（核心能力）
+
+| 功能 | 描述 |
+|------|------|
+| 🔗 **实体关联** | 任意实体之间可建立关联（问题→方案→知识→决策→复盘） |
+| 📋 **详情页** | 每个实体都有独立详情页，展示完整信息和关联关系 |
+| 💡 **智能推荐** | 基于共享标签自动推荐可能关联的实体 |
+| 🔗 **关联管理** | 在详情页中创建、查看、删除关联关系 |
+| 📁 **项目中心** | 项目详情页聚合展示该项目下的所有关联实体 |
+
 ### 辅助功能
 
 | 功能 | 描述 |
 |------|------|
-| 🏷️ **标签系统** | 为任意实体添加标签，灵活分类 |
-| 🔗 **关系管理** | 建立实体间的关联（依赖、导致、解决等） |
-| 📅 **时间线** | 按时间查看所有事件，支持筛选 |
-| 🔍 **全文搜索** | 搜索所有实体的标题和内容 |
+| 🏷️ **标签系统** | 为任意实体添加标签，灵活分类，支持等级标记 |
+| 📅 **时间线** | 支持链路视图（折叠展示关联链路）和列表视图 |
+| 🔍 **全文搜索** | 基于 PostgreSQL tsvector 的高性能全文检索 |
 | 📊 **仪表盘** | 查看各模块统计和最近更新 |
 
 ---
@@ -65,7 +76,8 @@
 ┌─────────────────────────────────────────────────────────┐
 │                      前端 (Next.js)                      │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────────┐  │
-│  │ 仪表盘  │ │ CRUD页面│ │ 时间线  │ │    搜索       │  │
+│  │ 仪表盘  │ │ CRUD页面│ │ 详情页  │ │  关联管理     │  │
+│  │         │ │ + 列表  │ │ + 标签  │ │  推荐 + 搜索  │  │
 │  └─────────┘ └─────────┘ └─────────┘ └───────────────┘  │
 │                    React 19 + TailwindCSS                │
 └─────────────────────────┬───────────────────────────────┘
@@ -73,7 +85,8 @@
 ┌─────────────────────────┴───────────────────────────────┐
 │                    后端 (FastAPI)                         │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────────┐  │
-│  │   API   │ │ Schemas │ │ Models  │ │   Services    │  │
+│  │   API   │ │Suggesti-│ │Entity   │ │   Timeline    │  │
+│  │  CRUD   │ │ons API  │ │Relations│ │   Chains      │  │
 │  └─────────┘ └─────────┘ └─────────┘ └───────────────┘  │
 │              SQLAlchemy 2.0 (Async) + Pydantic           │
 └─────────────────────────┬───────────────────────────────┘
@@ -81,9 +94,9 @@
 ┌─────────────────────────┴───────────────────────────────┐
 │                   数据库 (PostgreSQL)                     │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────────┐  │
-│  │Projects │ │Issues   │ │Knowledge│ │    Tags       │  │
+│  │ 7 实体  │ │  Tags   │ │Relations│ │  GIN 全文索引  │  │
+│  │  表     │ │(多态)   │ │(多态图) │ │  + B-tree     │  │
 │  └─────────┘ └─────────┘ └─────────┘ └───────────────┘  │
-│                    12 张表 + 索引优化                     │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -99,7 +112,7 @@
 | **ORM** | SQLAlchemy | 2.0+ | 异步数据库操作 |
 | **数据验证** | Pydantic | 2.x | 请求/响应数据验证 |
 | **数据库迁移** | Alembic | latest | 版本化数据库变更 |
-| **数据库** | PostgreSQL | 16 | 关系型数据库 |
+| **数据库** | PostgreSQL | 16 | 关系型数据库 + GIN 全文索引 |
 | **异步驱动** | asyncpg | latest | 异步 PostgreSQL 驱动 |
 | **容器化** | Docker Compose | v2+ | 多服务编排部署 |
 
@@ -122,7 +135,7 @@ cd CaptureOS-plus
 # 2. 启动所有服务（首次启动会自动构建镜像，约 5-10 分钟）
 docker compose up -d
 
-# 3. 运行数据库迁移（创建表结构）
+# 3. 运行数据库迁移（创建表结构 + 索引）
 docker compose exec backend alembic upgrade head
 
 # 4. 完成！访问应用
@@ -149,64 +162,67 @@ CaptureOS-plus/
 │   │   │   ├── __init__.py          # 路由注册
 │   │   │   ├── base.py              # 通用 CRUD 工厂
 │   │   │   ├── deps.py              # 依赖注入
-│   │   │   ├── projects.py          # 项目接口
-│   │   │   ├── experiences.py       # 经验接口
-│   │   │   ├── issues.py            # 问题接口
-│   │   │   ├── solutions.py         # 解决方案接口
-│   │   │   ├── knowledge.py         # 知识接口
-│   │   │   ├── decisions.py         # 决策接口
-│   │   │   ├── reviews.py           # 复盘接口
+│   │   │   ├── projects.py          # 项目接口 (+ /related)
+│   │   │   ├── experiences.py       # 经验接口 (+ /related)
+│   │   │   ├── issues.py            # 问题接口 (+ /related)
+│   │   │   ├── solutions.py         # 解决方案接口 (+ /related)
+│   │   │   ├── knowledge.py         # 知识接口 (+ /related)
+│   │   │   ├── decisions.py         # 决策接口 (+ /related)
+│   │   │   ├── reviews.py           # 复盘接口 (+ /related)
 │   │   │   ├── tags.py              # 标签接口
 │   │   │   ├── relations.py         # 关系接口
-│   │   │   ├── search.py            # 搜索接口
-│   │   │   ├── timeline.py          # 时间线接口
+│   │   │   ├── suggestions.py       # 关联推荐接口
+│   │   │   ├── entity_relations.py  # 实体关联公共逻辑
+│   │   │   ├── search.py            # 全文搜索接口 (tsvector)
+│   │   │   ├── timeline.py          # 时间线接口 (+ 链路聚合)
 │   │   │   └── dashboard.py         # 仪表盘接口
 │   │   ├── models/                   # 数据库模型
-│   │   │   ├── project.py           # 项目模型
-│   │   │   ├── experience.py        # 经验模型
-│   │   │   ├── issue.py             # 问题模型
-│   │   │   ├── solution.py          # 解决方案模型
-│   │   │   ├── knowledge.py         # 知识模型
-│   │   │   ├── decision.py          # 决策模型
-│   │   │   ├── review.py            # 复盘模型
-│   │   │   ├── tag.py               # 标签模型
-│   │   │   └── relation.py          # 关系模型
 │   │   ├── schemas/                  # Pydantic 数据模式
 │   │   ├── config.py                # 配置管理
 │   │   ├── database.py              # 数据库连接
 │   │   └── main.py                  # FastAPI 入口
 │   ├── alembic/                      # 数据库迁移
-│   │   ├── versions/                # 迁移版本
-│   │   └── env.py                   # 迁移配置
-│   ├── Dockerfile                    # 后端镜像定义
-│   └── pyproject.toml               # Python 依赖
+│   │   └── versions/
+│   │       ├── 001_initial_tables.py # 初始表结构
+│   │       └── 002_add_indexes_and_fts.py  # 索引 + 全文检索
+│   ├── Dockerfile
+│   └── pyproject.toml
 ├── frontend/                         # 前端服务
 │   ├── src/
 │   │   ├── app/                      # Next.js 页面
 │   │   │   ├── page.tsx             # 仪表盘
 │   │   │   ├── layout.tsx           # 布局
 │   │   │   ├── projects/            # 项目页面
-│   │   │   ├── experiences/         # 经验页面
+│   │   │   │   ├── page.tsx         # 列表页
+│   │   │   │   └── [id]/page.tsx    # 详情页 (Project Hub)
 │   │   │   ├── issues/              # 问题页面
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── [id]/page.tsx    # 详情页
 │   │   │   ├── solutions/           # 解决方案页面
 │   │   │   ├── knowledge/           # 知识页面
 │   │   │   ├── decisions/           # 决策页面
 │   │   │   ├── reviews/             # 复盘页面
+│   │   │   ├── experiences/         # 经验页面
 │   │   │   ├── tags/                # 标签页面
-│   │   │   ├── timeline/            # 时间线页面
+│   │   │   ├── timeline/            # 时间线页面 (链路/列表)
 │   │   │   └── search/              # 搜索页面
 │   │   ├── components/               # 共享组件
 │   │   │   ├── Sidebar.tsx          # 侧边栏导航
 │   │   │   ├── EntityForm.tsx       # 通用表单组件
-│   │   │   └── EntityList.tsx       # 通用列表组件
+│   │   │   ├── EntityList.tsx       # 通用列表组件
+│   │   │   ├── EntityDetail.tsx     # 通用详情页组件
+│   │   │   ├── RelationPicker.tsx   # 关联选择弹窗
+│   │   │   ├── SuggestionBar.tsx    # 关联推荐提示栏
+│   │   │   └── TagPicker.tsx        # 标签选择弹窗
 │   │   └── lib/
-│   │       └── api.ts               # API 工具函数
-│   ├── Dockerfile                    # 前端镜像定义
-│   ├── next.config.js               # Next.js 配置
-│   └── package.json                 # Node.js 依赖
-├── docker-compose.yml                # Docker 编排配置
-├── .gitignore                        # Git 忽略规则
-└── README.md                         # 项目说明
+│   │       ├── api.ts               # API 工具函数
+│   │       └── time.ts              # 时间格式化
+│   ├── Dockerfile
+│   ├── next.config.js
+│   └── package.json
+├── docker-compose.yml
+├── .gitignore
+└── README.md
 ```
 
 ---
@@ -215,44 +231,60 @@ CaptureOS-plus/
 
 ### 实体 CRUD 接口
 
-每个实体模块都支持标准的 CRUD 操作：
+每个实体模块都支持标准的 CRUD 操作 + 关联查询：
 
-| 接口 | 方法 | 描述 | 请求体 |
-|------|------|------|--------|
-| `/api/projects/` | `GET` | 获取项目列表 | - |
-| `/api/projects/` | `POST` | 创建项目 | `{title, description, status, ...}` |
-| `/api/projects/{id}` | `GET` | 获取单个项目 | - |
-| `/api/projects/{id}` | `PUT` | 更新项目 | `{title?, description?, ...}` |
-| `/api/projects/{id}` | `DELETE` | 删除项目 | - |
-| `/api/projects/count/` | `GET` | 获取项目总数 | - |
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/{entities}/` | `GET` | 获取列表（支持分页） |
+| `/api/{entities}/` | `POST` | 创建 |
+| `/api/{entities}/{id}` | `GET` | 获取单条 |
+| `/api/{entities}/{id}` | `PUT` | 更新 |
+| `/api/{entities}/{id}` | `DELETE` | 删除 |
+| `/api/{entities}/count/` | `GET` | 获取总数 |
+| `/api/{entities}/{id}/related` | `GET` | **获取所有关联实体** |
 
-> 其他实体（experiences, issues, solutions, knowledge, decisions, reviews）接口格式相同。
+> `{entities}` 可选：projects, experiences, issues, solutions, knowledge, decisions, reviews
 
-### 特殊接口
+### 关联推荐接口
 
-| 接口 | 方法 | 描述 | 参数 |
-|------|------|------|------|
-| `/api/tags/` | `GET/POST` | 标签管理 | - |
-| `/api/tags/assign` | `POST` | 给实体打标签 | `{entity_type, entity_id, tag_id}` |
-| `/api/tags/entity/{type}/{id}` | `GET` | 获取实体标签 | - |
-| `/api/relations/` | `GET/POST` | 关系管理 | - |
-| `/api/relations/types/` | `GET` | 获取关系类型 | - |
-| `/api/search/` | `GET` | 全文搜索 | `?q=关键词&type=实体类型` |
-| `/api/timeline/` | `GET` | 时间线 | `?start_date=&end_date=&type=` |
-| `/api/dashboard/` | `GET` | 仪表盘数据 | - |
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/suggestions/{type}/{id}` | `GET` | 基于共享标签推荐可能关联的实体 |
+
+### 关系管理接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/relations/` | `GET` | 查询关联（支持 source/target 过滤） |
+| `/api/relations/` | `POST` | 创建关联 |
+| `/api/relations/{id}` | `DELETE` | 删除关联 |
+| `/api/relations/types/` | `GET` | 获取关系类型 |
+
+### 其他接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/tags/` | `GET/POST` | 标签管理 |
+| `/api/tags/assign` | `POST` | 给实体打标签 |
+| `/api/search/?q=` | `GET` | 全文搜索（PostgreSQL tsvector） |
+| `/api/timeline/` | `GET` | 时间线（扁平列表） |
+| `/api/timeline/chains` | `GET` | **时间线链路聚合** |
+| `/api/dashboard/` | `GET` | 仪表盘数据 |
 
 ### 预设关系类型
 
 系统内置 8 种关系类型：
 
-- `related_to` — 通用关联
-- `depends_on` — 依赖于
-- `blocks` — 阻塞
-- `caused_by` — 导致
-- `solved_by` — 被...解决
-- `learned_from` — 从...学到
-- `part_of` — 属于
-- `follows` — 继...之后
+| 关系 | 说明 | 反向 |
+|------|------|------|
+| `related_to` | 通用关联 | `related_to` |
+| `depends_on` | 依赖于 | `depended_by` |
+| `blocks` | 阻塞 | `blocked_by` |
+| `caused_by` | 导致 | `causes` |
+| `solved_by` | 被...解决 | `solves` |
+| `learned_from` | 从...学到 | `taught_to` |
+| `part_of` | 属于 | `contains` |
+| `follows` | 继...之后 | `precedes` |
 
 ---
 

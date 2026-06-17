@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
@@ -61,6 +62,7 @@ const columns = [
 ];
 
 export default function SolutionsPage() {
+  const router = useRouter();
   const { data, error, isLoading, mutate } = useSWR<Solution[]>('/solutions/', fetchAPI);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Solution | null>(null);
@@ -131,6 +133,7 @@ export default function SolutionsPage() {
       <EntityList entityType="solution"
         data={data || []}
         columns={columns}
+        onView={(item) => router.push(`/solutions/${item.id}`)}
         onEdit={(item) => {
           setEditingItem(item);
           setShowForm(true);

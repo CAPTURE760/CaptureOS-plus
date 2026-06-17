@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import EntityList from '@/components/EntityList';
@@ -67,6 +68,7 @@ const columns = [
 ];
 
 export default function IssuesPage() {
+  const router = useRouter();
   const { data, error, isLoading, mutate } = useSWR<Issue[]>('/issues/', fetchAPI);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Issue | null>(null);
@@ -133,6 +135,7 @@ export default function IssuesPage() {
       <EntityList entityType="issue"
         data={data || []}
         columns={columns}
+        onView={(item) => router.push(`/issues/${item.id}`)}
         onEdit={(item) => {
           setEditingItem(item);
           setShowForm(true);

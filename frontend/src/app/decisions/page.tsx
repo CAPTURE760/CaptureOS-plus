@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
@@ -62,6 +63,7 @@ const columns = [
 ];
 
 export default function DecisionsPage() {
+  const router = useRouter();
   const { data, error, isLoading, mutate } = useSWR<Decision[]>('/decisions/', fetchAPI);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Decision | null>(null);
@@ -132,6 +134,7 @@ export default function DecisionsPage() {
       <EntityList entityType="decision"
         data={data || []}
         columns={columns}
+        onView={(item) => router.push(`/decisions/${item.id}`)}
         onEdit={(item) => {
           setEditingItem(item);
           setShowForm(true);
