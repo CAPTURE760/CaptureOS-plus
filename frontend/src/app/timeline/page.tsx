@@ -40,6 +40,9 @@ export default function TimelinePage() {
   const [entityType, setEntityType] = useState('');
   const [viewMode, setViewMode] = useState<'flat' | 'chains'>('chains');
 
+  // 日期格式化：避免 toISOString 的时区偏移问题
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   const queryParams = new URLSearchParams();
   if (startDate) queryParams.set('start_date', startDate);
   if (endDate) queryParams.set('end_date', endDate);
@@ -81,21 +84,19 @@ export default function TimelinePage() {
           {/* 快捷按钮 */}
           <div className="flex gap-1.5">
             <QuickBtn label="今天" onClick={() => {
-              const today = new Date().toISOString().split('T')[0];
-              setStartDate(today); setEndDate(today);
+              const t = fmt(new Date());
+              setStartDate(t); setEndDate(t);
             }} />
             <QuickBtn label="本周" onClick={() => {
               const now = new Date();
-              const day = now.getDay() || 7;
-              const monday = new Date(now); monday.setDate(now.getDate() - day + 1);
-              setStartDate(monday.toISOString().split('T')[0]);
-              setEndDate(now.toISOString().split('T')[0]);
+              const day = now.getDay() || 7; // 1=Mon, 7=Sun
+              const mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+              setStartDate(fmt(mon)); setEndDate(fmt(now));
             }} />
             <QuickBtn label="本月" onClick={() => {
               const now = new Date();
               const first = new Date(now.getFullYear(), now.getMonth(), 1);
-              setStartDate(first.toISOString().split('T')[0]);
-              setEndDate(now.toISOString().split('T')[0]);
+              setStartDate(fmt(first)); setEndDate(fmt(now));
             }} />
             <QuickBtn label="全部" onClick={() => { setStartDate(''); setEndDate(''); }} active={!startDate && !endDate} />
           </div>
