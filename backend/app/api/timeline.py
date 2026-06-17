@@ -19,17 +19,19 @@ from app.models.solution import Solution
 router = APIRouter(prefix="/timeline", tags=["timeline"])
 
 # Union-Find: 用于链路聚合
-_parent: dict[int, int] = {}
+_parent: dict[str, str] = {}
 
 
-def _find(x: int) -> int:
+def _find(x: str) -> str:
+    if x not in _parent:
+        _parent[x] = x
     while _parent[x] != x:
         _parent[x] = _parent[_parent[x]]
         x = _parent[x]
     return x
 
 
-def _union(a: int, b: int) -> None:
+def _union(a: str, b: str) -> None:
     ra, rb = _find(a), _find(b)
     if ra != rb:
         _parent[ra] = rb
