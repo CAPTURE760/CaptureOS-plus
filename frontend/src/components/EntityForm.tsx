@@ -30,7 +30,18 @@ export default function EntityForm({
   cancelLabel = '取消',
   title,
 }: EntityFormProps) {
-  const [formData, setFormData] = useState<Record<string, unknown>>(initialData);
+  // 新建时，date 类型字段默认填今天日期
+  const getDefaultData = () => {
+    const data = { ...initialData };
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    fields.forEach((field) => {
+      if (field.type === 'date' && !data[field.name]) {
+        data[field.name] = today;
+      }
+    });
+    return data;
+  };
+  const [formData, setFormData] = useState<Record<string, unknown>>(getDefaultData);
 
   const handleChange = (name: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
