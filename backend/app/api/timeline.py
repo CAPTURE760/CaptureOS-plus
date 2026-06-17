@@ -34,13 +34,30 @@ ENTITY_CONFIGS = [
 
 
 def _get_date(item, date_field_name: str) -> date | None:
-    """安全获取实体日期。"""
+    """安全获取实体日期，统一返回 date 对象。"""
     d = getattr(item, date_field_name, None)
-    if d is None and hasattr(item, "created_at"):
-        d = item.created_at
-        if hasattr(d, "date"):
-            d = d.date()
-    return d
+    if d is None:
+        d = getattr(item, "created_at", None)
+    if d is None:
+        return None
+    # datetime → date
+    if hasattr(d, "date") and callable(d.date):
+        return d.date()
+    # 已经是 date
+    if isinstance(d, date):
+        return d
+    return None
+
+
+def _in_range(d: date | None, start: date | None, end: date | None) -> bool:
+    """判断日期是否在范围内。d 为 None 时视为不在范围内。"""
+    if d is None:
+        return False
+    if start and d < start:
+        return False
+    if end and d > end:
+        return False
+    return True
 
 
 @router.get("/")
@@ -60,20 +77,9 @@ async def get_timeline(
         result = await db.execute(query)
         for item in result.scalars().all():
             d = _get_date(item, date_field_name)
-            # 筛选逻辑：业务日期 OR 创建时间 在范围内就显示
-            created = item.created_at.date() if hasattr(item, "created_at") and item.created_at else None
-            in_range = True
-            if start_date:
-                biz_ok = d and d >= start_date
-                created_ok = created and created >= start_date
-                if not biz_ok and not created_ok:
-                    in_range = False
-            if end_date and in_range:
-                biz_ok = d and d <= end_date
-                created_ok = created and created <= end_date
-                if not biz_ok and not created_ok:
-                    in_range = False
-            if not in_range:
+            created = _get_date(item, "created_at")
+            # 筛选：业务日期 OR 创建时间 任一在范围内就显示
+            if (start_date or end_date) and not _in_range(d, start_date, end_date) and not _in_range(created, start_date, end_date):
                 continue
 
             entry: dict[str, Any] = {
@@ -109,15 +115,8 @@ async def get_timeline_chains(
         result = await db.execute(query)
         for item in result.scalars().all():
             d = _get_date(item, date_field_name)
-            created = item.created_at.date() if hasattr(item, "created_at") and item.created_at else None
-            in_range = True
-            if start_date:
-                if not ((d and d >= start_date) or (created and created >= start_date)):
-                    in_range = False
-            if end_date and in_range:
-                if not ((d and d <= end_date) or (created and created <= end_date)):
-                    in_range = False
-            if not in_range:
+            created = _get_date(item, "created_at")
+            if (start_date or end_date) and not _in_range(d, start_date, end_date) and not _in_range(created, start_date, end_date):
                 continue
             key = f"{etype}:{item.id}"
             all_entities[key] = {
