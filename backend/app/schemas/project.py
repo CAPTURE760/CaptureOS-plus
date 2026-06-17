@@ -10,7 +10,7 @@ class ProjectBase(BaseModel):
     status: str = "active"
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    priority: int = 0
+    priority: str = "中"
 
 
 class ProjectCreate(ProjectBase):
@@ -23,7 +23,7 @@ class ProjectUpdate(BaseModel):
     status: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    priority: Optional[int] = None
+    priority: Optional[str] = None
 
 
 class ProjectResponse(ProjectBase):

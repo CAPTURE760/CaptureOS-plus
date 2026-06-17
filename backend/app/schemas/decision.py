@@ -11,7 +11,8 @@ class DecisionBase(BaseModel):
     reason: Optional[str] = None
     result: Optional[str] = None
     decision_date: Optional[date] = None
-    confidence: Optional[float] = None
+    confidence: Optional[int] = None
+    status: str = "pending"
 
 
 class DecisionCreate(DecisionBase):
@@ -25,7 +26,8 @@ class DecisionUpdate(BaseModel):
     reason: Optional[str] = None
     result: Optional[str] = None
     decision_date: Optional[date] = None
-    confidence: Optional[float] = None
+    confidence: Optional[int] = None
+    status: Optional[str] = None
 
 
 class DecisionResponse(DecisionBase):

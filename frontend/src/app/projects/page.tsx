@@ -15,7 +15,7 @@ interface Project {
   status: string;
   start_date: string | null;
   end_date: string | null;
-  priority: number;
+  priority: string;
   created_at: string;
   updated_at: string;
 }
@@ -36,7 +36,15 @@ const fields = [
   },
   { name: 'start_date', label: '开始日期', type: 'date' as const },
   { name: 'end_date', label: '结束日期', type: 'date' as const },
-  { name: 'priority', label: '优先级', type: 'number' as const },
+  {
+    name: 'priority', label: '优先级', type: 'select' as const,
+    options: [
+      { value: '紧急', label: '🔴 紧急' },
+      { value: '高', label: '🟠 高' },
+      { value: '中', label: '🟡 中' },
+      { value: '低', label: '🟢 低' },
+    ],
+  },
 ];
 
 const columns = [
@@ -71,9 +79,13 @@ const columns = [
   {
     key: 'priority',
     label: '优先级',
-    render: (item: Project) => (
-      <span className="font-mono">{item.priority}</span>
-    ),
+    render: (item: Project) => {
+      const colors: Record<string, string> = {
+        '紧急': 'bg-red-100 text-red-800', '高': 'bg-orange-100 text-orange-800',
+        '中': 'bg-yellow-100 text-yellow-800', '低': 'bg-green-100 text-green-800',
+      };
+      return <span className={`px-2 py-1 rounded text-xs ${colors[item.priority] || 'bg-gray-100'}`}>{item.priority}</span>;
+    },
     width: '8%',
   },
   {

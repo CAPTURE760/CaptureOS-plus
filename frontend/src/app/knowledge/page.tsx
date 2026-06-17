@@ -15,6 +15,7 @@ interface Knowledge {
   category: string | null;
   source: string | null;
   confidence: number | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -24,7 +25,18 @@ const fields = [
   { name: 'content', label: '内容', type: 'textarea' as const, rows: 8 },
   { name: 'category', label: '分类' },
   { name: 'source', label: '来源' },
-  { name: 'confidence', label: '置信度 (0-1)', type: 'number' as const },
+  {
+    name: 'status', label: '状态', type: 'select' as const,
+    options: [
+      { value: 'unverified', label: '📋 待确认' },
+      { value: 'verified', label: '✅ 已验证' },
+      { value: 'outdated', label: '⚠️ 已过时' },
+    ],
+  },
+  {
+    name: 'confidence', label: '置信度 (0-10)', type: 'select' as const,
+    options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: `${i} (${i * 10}%)` })),
+  },
 ];
 
 const columns = [
@@ -36,7 +48,22 @@ const columns = [
     label: '置信度',
     render: (item: Knowledge) => (
       <span className="font-mono">
-        {item.confidence ? `${(item.confidence * 100).toFixed(0)}%` : '-'}
+        {item.confidence != null ? `${item.confidence * 10}%` : '-'}
+      </span>
+    ),
+    width: '10%',
+  },
+  {
+    key: 'status',
+    label: '状态',
+    render: (item: Knowledge) => (
+      <span className={`px-2 py-1 rounded text-xs ${
+        item.status === 'verified' ? 'bg-green-100 text-green-800' :
+        item.status === 'outdated' ? 'bg-yellow-100 text-yellow-800' :
+        'bg-gray-100 text-gray-800'
+      }`}>
+        {item.status === 'verified' ? '✅ 已验证' :
+         item.status === 'outdated' ? '⚠️ 已过时' : '📋 待确认'}
       </span>
     ),
     width: '10%',

@@ -140,19 +140,32 @@ export default function EntityDetail({
         completed: { label: '已完成', color: 'bg-blue-100 text-blue-800' },
         paused: { label: '暂停', color: 'bg-yellow-100 text-yellow-800' },
         cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-800' },
+        pending: { label: '待执行', color: 'bg-gray-100 text-gray-800' },
+        deprecated: { label: '已废弃', color: 'bg-red-100 text-red-800' },
+        unverified: { label: '待确认', color: 'bg-gray-100 text-gray-800' },
+        verified: { label: '已验证', color: 'bg-green-100 text-green-800' },
+        outdated: { label: '已过时', color: 'bg-yellow-100 text-yellow-800' },
       };
       const s = statusMap[value as string] || { label: value as string, color: 'bg-gray-100' };
       return <span className={`px-2 py-1 rounded text-xs ${s.color}`}>{s.label}</span>;
     }
-    if (key === 'effectiveness' || key === 'rating' || key === 'priority') {
+    if (key === 'priority') {
+      const priorityMap: Record<string, { label: string; color: string }> = {
+        '紧急': { label: '🔴 紧急', color: 'bg-red-100 text-red-800' },
+        '高': { label: '🟠 高', color: 'bg-orange-100 text-orange-800' },
+        '中': { label: '🟡 中', color: 'bg-yellow-100 text-yellow-800' },
+        '低': { label: '🟢 低', color: 'bg-green-100 text-green-800' },
+      };
+      const p = priorityMap[value as string] || { label: String(value), color: 'bg-gray-100' };
+      return <span className={`px-2 py-1 rounded text-xs ${p.color}`}>{p.label}</span>;
+    }
+    if (key === 'effectiveness' || key === 'rating') {
       const v = Number(value);
-      if (key === 'effectiveness' || key === 'rating') {
-        return <span>{'⭐'.repeat(v)} <span className="text-gray-500">({v})</span></span>;
-      }
-      return <span className="font-mono">{v}</span>;
+      return <span>{'⭐'.repeat(v)} <span className="text-gray-500">({v})</span></span>;
     }
     if (key === 'confidence') {
-      return <span>{(Number(value) * 100).toFixed(0)}%</span>;
+      const v = Number(value);
+      return <span className="font-mono">{v != null ? `${v * 10}%` : '-'}</span>;
     }
     if (typeof value === 'string' && value.length > 100) {
       return <span className="whitespace-pre-wrap">{value}</span>;

@@ -17,6 +17,7 @@ interface Decision {
   result: string | null;
   decision_date: string | null;
   confidence: number | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -27,7 +28,19 @@ const fields = [
   { name: 'reason', label: '理由', type: 'textarea' as const, rows: 5 },
   { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'decision_date', label: '决策日期', type: 'date' as const },
-  { name: 'confidence', label: '置信度 (0-1)', type: 'number' as const },
+  {
+    name: 'status', label: '状态', type: 'select' as const,
+    options: [
+      { value: 'pending', label: '📋 待执行' },
+      { value: 'in_progress', label: '🔄 执行中' },
+      { value: 'completed', label: '✅ 已完成' },
+      { value: 'deprecated', label: '❌ 已废弃' },
+    ],
+  },
+  {
+    name: 'confidence', label: '置信度 (0-10)', type: 'select' as const,
+    options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: `${i} (${i * 10}%)` })),
+  },
 ];
 
 const columns = [
@@ -37,10 +50,27 @@ const columns = [
     label: '置信度',
     render: (item: Decision) => (
       <span className="font-mono">
-        {item.confidence ? `${(item.confidence * 100).toFixed(0)}%` : '-'}
+        {item.confidence != null ? `${item.confidence * 10}%` : '-'}
       </span>
     ),
-    width: '12%',
+    width: '10%',
+  },
+  {
+    key: 'status',
+    label: '状态',
+    render: (item: Decision) => (
+      <span className={`px-2 py-1 rounded text-xs ${
+        item.status === 'completed' ? 'bg-green-100 text-green-800' :
+        item.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+        item.status === 'deprecated' ? 'bg-red-100 text-red-800' :
+        'bg-gray-100 text-gray-800'
+      }`}>
+        {item.status === 'completed' ? '✅ 已完成' :
+         item.status === 'in_progress' ? '🔄 执行中' :
+         item.status === 'deprecated' ? '❌ 已废弃' : '📋 待执行'}
+      </span>
+    ),
+    width: '10%',
   },
   {
     key: 'decision_date',

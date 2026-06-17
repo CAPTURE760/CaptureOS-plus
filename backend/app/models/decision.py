@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import DateTime, Numeric, String, Text, func
+from sqlalchemy import DateTime, SmallInteger, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,7 +17,8 @@ class Decision(Base):
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
     decision_date: Mapped[date | None] = mapped_column(nullable=True)
-    confidence: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
+    confidence: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), server_default="pending")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

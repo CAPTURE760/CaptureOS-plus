@@ -9,7 +9,8 @@ class KnowledgeBase(BaseModel):
     content: Optional[str] = None
     category: Optional[str] = None
     source: Optional[str] = None
-    confidence: Optional[float] = None
+    confidence: Optional[int] = None
+    status: str = "unverified"
 
 
 class KnowledgeCreate(KnowledgeBase):
@@ -21,7 +22,8 @@ class KnowledgeUpdate(BaseModel):
     content: Optional[str] = None
     category: Optional[str] = None
     source: Optional[str] = None
-    confidence: Optional[float] = None
+    confidence: Optional[int] = None
+    status: Optional[str] = None
 
 
 class KnowledgeResponse(KnowledgeBase):

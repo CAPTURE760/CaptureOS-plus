@@ -12,7 +12,7 @@ interface Issue {
   title: string;
   description: string | null;
   status: string;
-  priority: number;
+  priority: string;
   root_cause: string | null;
   discovered_date: string | null;
   resolved_date: string | null;
@@ -34,7 +34,15 @@ const fields = [
       { value: 'closed', label: '已关闭' },
     ],
   },
-  { name: 'priority', label: '优先级', type: 'number' as const },
+  {
+    name: 'priority', label: '优先级', type: 'select' as const,
+    options: [
+      { value: '紧急', label: '🔴 紧急' },
+      { value: '高', label: '🟠 高' },
+      { value: '中', label: '🟡 中' },
+      { value: '低', label: '🟢 低' },
+    ],
+  },
   { name: 'root_cause', label: '根本原因', type: 'textarea' as const },
   { name: 'discovered_date', label: '发现日期', type: 'date' as const },
   { name: 'resolved_date', label: '解决日期', type: 'date' as const },
@@ -58,7 +66,16 @@ const columns = [
       </span>
     ),
   },
-  { key: 'priority', label: '优先级' },
+  {
+    key: 'priority', label: '优先级',
+    render: (item: Issue) => {
+      const colors: Record<string, string> = {
+        '紧急': 'bg-red-100 text-red-800', '高': 'bg-orange-100 text-orange-800',
+        '中': 'bg-yellow-100 text-yellow-800', '低': 'bg-green-100 text-green-800',
+      };
+      return <span className={`px-2 py-1 rounded text-xs ${colors[item.priority] || 'bg-gray-100'}`}>{item.priority}</span>;
+    },
+  },
   {
     key: 'discovered_date',
     label: '发现日期',
