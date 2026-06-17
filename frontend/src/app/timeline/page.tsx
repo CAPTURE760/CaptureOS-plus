@@ -45,7 +45,7 @@ export default function TimelinePage() {
   if (endDate) queryParams.set('end_date', endDate);
 
   const queryString = queryParams.toString();
-  const baseUrl = viewMode === 'chains' ? '/timeline/chains' : '/timeline';
+  const baseUrl = viewMode === 'chains' ? '/timeline/chains/' : '/timeline/';
   const url = `${baseUrl}${queryString ? `?${queryString}` : ''}`;
 
   const { data, error, isLoading } = useSWR<ChainEvent[] | TimelineEvent[]>(url, fetchAPI);
