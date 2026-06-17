@@ -1,6 +1,6 @@
-"""Full-text search API using PostgreSQL tsvector/tsquery."""
+"""Search API — 支持中文子串匹配。"""
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
@@ -26,17 +26,6 @@ SEARCH_CONFIG = [
 ]
 
 
-def _build_tsvector_expr(model, search_fields):
-    """构建 to_tsvector('simple',拼接字段) 表达式。"""
-    parts = []
-    for field in search_fields:
-        parts.append(func.coalesce(field, ""))
-    combined = parts[0]
-    for part in parts[1:]:
-        combined = func.concat(combined, " ", part)
-    return func.to_tsvector("simple", combined)
-
-
 @router.get("/")
 async def search(
     q: str = Query(..., min_length=1),
@@ -49,15 +38,9 @@ async def search(
         if entity_type and etype != entity_type:
             continue
 
-        tsvector = _build_tsvector_expr(model, search_fields)
-
-        # 使用 @@ 操作符做全文匹配，PostgreSQL 会自动利用 GIN 索引
-        # match() 方法生成 tsvector @@ plainto_tsquery('simple', q)
-        query = (
-            select(model)
-            .where(tsvector.match(q, postgresql_regconfig="simple"))
-            .limit(10)
-        )
+        # 使用 ILIKE 做子串匹配，支持中文
+        conditions = [field.ilike(f"%{q}%") for field in search_fields]
+        query = select(model).where(or_(*conditions)).limit(10)
         result = await db.execute(query)
         items = result.scalars().all()
 
