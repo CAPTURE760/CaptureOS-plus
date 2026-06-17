@@ -78,21 +78,43 @@ export default function TimelinePage() {
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
         <div className="flex gap-4 items-end">
+          {/* 快捷按钮 */}
+          <div className="flex gap-1.5">
+            <QuickBtn label="今天" onClick={() => {
+              const today = new Date().toISOString().split('T')[0];
+              setStartDate(today); setEndDate(today);
+            }} />
+            <QuickBtn label="本周" onClick={() => {
+              const now = new Date();
+              const day = now.getDay() || 7;
+              const monday = new Date(now); monday.setDate(now.getDate() - day + 1);
+              setStartDate(monday.toISOString().split('T')[0]);
+              setEndDate(now.toISOString().split('T')[0]);
+            }} />
+            <QuickBtn label="本月" onClick={() => {
+              const now = new Date();
+              const first = new Date(now.getFullYear(), now.getMonth(), 1);
+              setStartDate(first.toISOString().split('T')[0]);
+              setEndDate(now.toISOString().split('T')[0]);
+            }} />
+            <QuickBtn label="全部" onClick={() => { setStartDate(''); setEndDate(''); }} active={!startDate && !endDate} />
+          </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">开始日期</label>
+            <label className="block text-xs text-gray-400 mb-1">开始</label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg" />
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">结束日期</label>
+            <label className="block text-xs text-gray-400 mb-1">结束</label>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg" />
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
           </div>
           {viewMode === 'flat' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">类型</label>
+              <label className="block text-xs text-gray-400 mb-1">类型</label>
               <select value={entityType} onChange={(e) => setEntityType(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg">
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">全部</option>
                 <option value="project">项目</option>
                 <option value="experience">经验</option>
@@ -201,5 +223,20 @@ function ChainItem({ item }: { item: ChainEvent }) {
         )}
       </div>
     </div>
+  );
+}
+
+function QuickBtn({ label, onClick, active }: { label: string; onClick: () => void; active?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
+        active
+          ? 'bg-blue-600 text-white border-blue-600'
+          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+      }`}
+    >
+      {label}
+    </button>
   );
 }
