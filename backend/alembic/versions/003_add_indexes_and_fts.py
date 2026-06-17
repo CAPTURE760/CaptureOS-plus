@@ -1,7 +1,7 @@
 """add indexes and full-text search
 
-Revision ID: 002
-Revises: 001
+Revision ID: 003
+Revises: 002
 Create Date: 2026-06-17
 """
 from typing import Sequence, Union
@@ -10,15 +10,14 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import text
 
-revision: str = "002"
-down_revision: Union[str, None] = "001"
+revision: str = "003"
+down_revision: Union[str, None] = "002"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     # ── GIN 全文索引（7 张核心表）──
-    # 每张表用 to_tsvector('simple', ...) 拼接主要文本字段
     fts_indexes = [
         ("ix_issues_search", "issues",
          "to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, '') || ' ' || coalesce(root_cause, ''))"),
@@ -42,13 +41,8 @@ def upgrade() -> None:
         ))
 
     # ── B-tree 索引 ──
-    # entity_tags.tag_id：按标签查哪些实体用了它（推荐关联功能）
     op.create_index("ix_entity_tags_tag_id", "entity_tags", ["tag_id"])
-
-    # issues.status：Dashboard 统计 WHERE status='open'
     op.create_index("ix_issues_status", "issues", ["status"])
-
-    # projects.status：Dashboard 统计 WHERE status='active'
     op.create_index("ix_projects_status", "projects", ["status"])
 
     # 各实体的日期字段：Timeline 按日期筛选排序
@@ -61,7 +55,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # 删除 B-tree 索引
     op.drop_index("ix_projects_start_date", table_name="projects")
     op.drop_index("ix_solutions_implemented_date", table_name="solutions")
     op.drop_index("ix_reviews_review_date", table_name="reviews")
@@ -72,7 +65,6 @@ def downgrade() -> None:
     op.drop_index("ix_issues_status", table_name="issues")
     op.drop_index("ix_entity_tags_tag_id", table_name="entity_tags")
 
-    # 删除 GIN 全文索引
     op.execute(text("DROP INDEX IF EXISTS ix_reviews_search"))
     op.execute(text("DROP INDEX IF EXISTS ix_experiences_search"))
     op.execute(text("DROP INDEX IF EXISTS ix_decisions_search"))
