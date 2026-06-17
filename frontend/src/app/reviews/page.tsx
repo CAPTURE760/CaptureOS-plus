@@ -125,20 +125,13 @@ export default function ReviewsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow mb-6 border-l-4 border-pink-500">
-          <h2 className="text-lg font-semibold mb-4">
-            {editingItem ? '✏️ 编辑复盘' : '➕ 新建复盘'}
-          </h2>
-          <EntityForm
-            fields={fields}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingItem(null);
-            }}
-            initialData={editingItem || {}}
-          />
-        </div>
+        <EntityForm
+          fields={fields}
+          onSubmit={handleSubmit}
+          onCancel={() => { setShowForm(false); setEditingItem(null); }}
+          initialData={editingItem || {}}
+          title={editingItem ? '✏️ 编辑复盘' : '➕ 新建复盘'}
+        />
       )}
 
       <EntityList entityType="review"
