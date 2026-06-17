@@ -189,19 +189,15 @@ function ChainItem({ item }: { item: ChainEvent }) {
   return (
     <div className="flex items-start gap-4">
       <div className={`w-4 h-4 rounded-full ${entityColors[primaryType]} mt-1.5 z-10 ring-2 ring-white`} />
-      <div className="bg-white p-4 rounded-lg shadow flex-1 border-l-4 border-blue-400">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-medium">
-              🔗 链路 ({item.entity_count}步)
-            </span>
-          </div>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-xs text-blue-600 hover:text-blue-800"
-          >
-            {expanded ? '收起' : '展开'}
-          </button>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="bg-white p-4 rounded-lg shadow flex-1 border-l-4 border-blue-400 cursor-pointer hover:shadow-md transition-shadow"
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-medium">
+            🔗 链路 ({item.entity_count}步)
+          </span>
+          <span className="text-xs text-gray-400">{expanded ? '▲ 收起' : '▼ 点击展开'}</span>
         </div>
         <h3 className="font-medium">{item.title}</h3>
         <p className="text-sm text-gray-500">
