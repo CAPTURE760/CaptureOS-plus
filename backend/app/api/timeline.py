@@ -60,9 +60,20 @@ async def get_timeline(
         result = await db.execute(query)
         for item in result.scalars().all():
             d = _get_date(item, date_field_name)
-            if start_date and d and d < start_date:
-                continue
-            if end_date and d and d > end_date:
+            # 筛选逻辑：业务日期 OR 创建时间 在范围内就显示
+            created = item.created_at.date() if hasattr(item, "created_at") and item.created_at else None
+            in_range = True
+            if start_date:
+                biz_ok = d and d >= start_date
+                created_ok = created and created >= start_date
+                if not biz_ok and not created_ok:
+                    in_range = False
+            if end_date and in_range:
+                biz_ok = d and d <= end_date
+                created_ok = created and created <= end_date
+                if not biz_ok and not created_ok:
+                    in_range = False
+            if not in_range:
                 continue
 
             entry: dict[str, Any] = {
@@ -98,9 +109,15 @@ async def get_timeline_chains(
         result = await db.execute(query)
         for item in result.scalars().all():
             d = _get_date(item, date_field_name)
-            if start_date and d and d < start_date:
-                continue
-            if end_date and d and d > end_date:
+            created = item.created_at.date() if hasattr(item, "created_at") and item.created_at else None
+            in_range = True
+            if start_date:
+                if not ((d and d >= start_date) or (created and created >= start_date)):
+                    in_range = False
+            if end_date and in_range:
+                if not ((d and d <= end_date) or (created and created <= end_date)):
+                    in_range = False
+            if not in_range:
                 continue
             key = f"{etype}:{item.id}"
             all_entities[key] = {
