@@ -4,7 +4,7 @@ Used by each entity router to add a GET /{id}/related endpoint.
 """
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -87,12 +87,10 @@ async def get_related_entities(
         select(Relation)
         .options(selectinload(Relation.relation_type))
         .where(
-            (Relation.source_type == entity_type) & (Relation.source_id == entity_id)
-        )
-        | select(Relation)
-        .options(selectinload(Relation.relation_type))
-        .where(
-            (Relation.target_type == entity_type) & (Relation.target_id == entity_id)
+            or_(
+                (Relation.source_type == entity_type) & (Relation.source_id == entity_id),
+                (Relation.target_type == entity_type) & (Relation.target_id == entity_id),
+            )
         )
     )
 
