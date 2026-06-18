@@ -23,7 +23,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://captureos:captureos@db:5432/captureos
       APP_NAME: CaptureOS
       DEBUG: "true"
-      CORS_ORIGINS: '["http://localhost:3000"]'
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:8001"]'
     depends_on:
       db:
         condition: service_healthy
