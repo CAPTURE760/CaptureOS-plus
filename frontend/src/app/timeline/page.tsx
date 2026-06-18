@@ -20,6 +20,7 @@ interface ChainEvent {
   type: 'single' | 'chain';
   title: string;
   date: string;
+  datetime?: string;
   entity?: TimelineEvent;
   entities?: TimelineEvent[];
   entity_count?: number;
@@ -216,7 +217,11 @@ function ChainItem({ item, router }: { item: ChainEvent; router: ReturnType<type
         </div>
         <h3 className="font-medium">{item.title}</h3>
         <p className="text-sm text-gray-500">
-          {item.date ? new Date(item.date + 'T00:00:00').toLocaleDateString('zh-CN') : '-'}
+          {item.datetime
+            ? new Date(item.datetime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : item.date
+              ? new Date(item.date + 'T00:00:00').toLocaleDateString('zh-CN')
+              : '-'}
         </p>
 
         {expanded && item.entities && (
@@ -230,7 +235,12 @@ function ChainItem({ item, router }: { item: ChainEvent; router: ReturnType<type
                 <span className={`px-1.5 py-0.5 rounded text-xs text-white ${entityColors[e.entity_type]}`}>
                   {entityLabels[e.entity_type]}
                 </span>
-                <span>{e.title}</span>
+                <span className="flex-1">{e.title}</span>
+                <span className="text-xs text-gray-400 shrink-0">
+                  {e.datetime
+                    ? new Date(e.datetime).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    : '-'}
+                </span>
                 {i < item.entities!.length - 1 && <span className="text-gray-400">→</span>}
               </div>
             ))}

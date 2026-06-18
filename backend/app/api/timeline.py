@@ -192,6 +192,7 @@ async def get_timeline_chains(
                 "type": "single",
                 "title": e["title"],
                 "date": e["date"],
+                "datetime": e.get("datetime"),
                 "entity": e,
             })
         else:
@@ -199,12 +200,15 @@ async def get_timeline_chains(
             title = issues[0]["title"] if issues else entities[0]["title"]
             dates = [e["date"] for e in entities if e["date"]]
             latest_date = max(dates) if dates else None
+            datetimes = [e["datetime"] for e in entities if e.get("datetime")]
+            latest_datetime = max(datetimes) if datetimes else None
             chains.append({
                 "type": "chain",
                 "title": title,
                 "date": latest_date,
+                "datetime": latest_datetime,
                 "entity_count": len(entities),
-                "entities": sorted(entities, key=lambda x: x["date"] or "0000-01-01"),
+                "entities": sorted(entities, key=lambda x: x["datetime"] or x["date"] or "0000-01-01"),
             })
 
     def _chain_sort_key(c):
