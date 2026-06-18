@@ -16,7 +16,9 @@ class Project(Base):
     start_date: Mapped[date | None] = mapped_column(nullable=True)
     end_date: Mapped[date | None] = mapped_column(nullable=True)
     priority: Mapped[str] = mapped_column(String(20), server_default="中")
-    deploy_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    github_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    tool: Mapped[str | None] = mapped_column(String(50), nullable=True)
     run_command: Mapped[str | None] = mapped_column(Text, nullable=True)
     tech_stack: Mapped[str | None] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

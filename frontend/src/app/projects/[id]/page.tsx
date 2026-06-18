@@ -22,7 +22,14 @@ const fields = [
     { value: '紧急', label: '🔴 紧急' }, { value: '高', label: '🟠 高' },
     { value: '中', label: '🟡 中' }, { value: '低', label: '🟢 低' },
   ]},
-  { name: 'deploy_url', label: '部署地址', placeholder: 'https://...' },
+  { name: 'source_url', label: '源文件地址', placeholder: 'D:\\projects\\xxx' },
+  { name: 'github_url', label: 'GitHub 地址', placeholder: 'https://github.com/...' },
+  { name: 'tool', label: '使用工具', type: 'select' as const, options: [
+    { value: 'Claude Code', label: 'Claude Code' },
+    { value: 'qclaw', label: 'qclaw' },
+    { value: '手写', label: '手写' },
+    { value: 'AI辅助', label: 'AI辅助' },
+  ]},
   { name: 'run_command', label: '运行方式', type: 'textarea' as const, rows: 3, placeholder: 'docker compose up -d 等' },
   { name: 'tech_stack', label: '技术栈', placeholder: 'Next.js, FastAPI, PostgreSQL' },
 ];
