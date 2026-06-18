@@ -203,7 +203,19 @@ export default function EntityDetail({
 
   return (
     <div>
-      {/* 顶部导航 */}
+      {/* 面包屑导航 */}
+      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="/" className="hover:text-blue-600">首页</a>
+        <span>/</span>
+        <a href={`/${entityType === 'issue' ? 'issues' : entityType === 'experience' ? 'experiences' : entityType + 's'}`}
+          className="hover:text-blue-600">
+          {ENTITY_ICONS[entityType]} {ENTITY_LABELS[entityType]}
+        </a>
+        <span>/</span>
+        <span className="text-gray-800 font-medium">{String(entity.title)}</span>
+      </nav>
+
+      {/* 操作按钮 */}
       <div className="flex items-center justify-between mb-6">
         <button onClick={onBack} className="text-blue-600 hover:text-blue-800 flex items-center gap-1">
           ← 返回列表
