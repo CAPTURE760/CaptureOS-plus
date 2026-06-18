@@ -45,7 +45,7 @@ const fields = [
     ],
   },
   { name: 'root_cause', label: '根本原因', type: 'textarea' as const },
-  { name: 'discovered_date', label: '发现日期', type: 'date' as const },
+  { name: 'discovered_date', label: '发现时间', type: 'datetime-local' as const },
   { name: 'resolved_date', label: '解决日期', type: 'date' as const },
 ];
 
@@ -79,9 +79,9 @@ const columns = [
   },
   {
     key: 'discovered_date',
-    label: '发现日期',
+    label: '发现时间',
     render: (item: Issue) =>
-      item.discovered_date ? new Date(item.discovered_date).toLocaleDateString('zh-CN') : '-',
+      item.discovered_date ? new Date(item.discovered_date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-',
   },
 ];
 

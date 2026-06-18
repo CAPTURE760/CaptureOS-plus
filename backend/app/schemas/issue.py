@@ -10,7 +10,7 @@ class IssueBase(BaseModel):
     status: str = "open"
     priority: str = "中"
     root_cause: Optional[str] = None
-    discovered_date: Optional[date] = None
+    discovered_date: Optional[datetime] = None
     resolved_date: Optional[date] = None
 
 
@@ -24,7 +24,7 @@ class IssueUpdate(BaseModel):
     status: Optional[str] = None
     priority: Optional[str] = None
     root_cause: Optional[str] = None
-    discovered_date: Optional[date] = None
+    discovered_date: Optional[datetime] = None
     resolved_date: Optional[date] = None
 
 

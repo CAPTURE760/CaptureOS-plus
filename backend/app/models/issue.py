@@ -16,7 +16,7 @@ class Issue(Base):
     status: Mapped[str] = mapped_column(String(20), default="open")
     priority: Mapped[str] = mapped_column(String(20), server_default="中")
     root_cause: Mapped[str | None] = mapped_column(Text, nullable=True)
-    discovered_date: Mapped[date_type | None] = mapped_column(nullable=True)
+    discovered_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_date: Mapped[date_type | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

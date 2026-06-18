@@ -5,7 +5,7 @@ import { useState } from 'react';
 interface Field {
   name: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'date' | 'number';
+  type?: 'text' | 'textarea' | 'select' | 'date' | 'datetime-local' | 'number';
   options?: { value: string; label: string }[];
   required?: boolean;
   rows?: number;
@@ -141,6 +141,13 @@ function FormFields({
             </select>
           ) : field.type === 'date' ? (
             <input type="date" name={field.name}
+              value={(formData[field.name] as string) || ''}
+              onChange={(e) => handleChange(field.name, e.target.value)}
+              required={field.required}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          ) : field.type === 'datetime-local' ? (
+            <input type="datetime-local" name={field.name}
               value={(formData[field.name] as string) || ''}
               onChange={(e) => handleChange(field.name, e.target.value)}
               required={field.required}

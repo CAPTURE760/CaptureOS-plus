@@ -140,6 +140,7 @@ async def get_timeline_chains(
                 "entity_id": item.id,
                 "title": item.title,
                 "date": d.isoformat() if d else None,
+                "datetime": _get_datetime(item, date_field_name),
             }
 
     # 2. 查链路关系，用 Union-Find 分组
@@ -206,5 +207,12 @@ async def get_timeline_chains(
                 "entities": sorted(entities, key=lambda x: x["date"] or "0000-01-01"),
             })
 
-    chains.sort(key=lambda x: x["date"] or "0000-01-01", reverse=True)
+    def _chain_sort_key(c):
+        if c["type"] == "single" and c.get("entity"):
+            return (c["entity"]["entity_type"], c["entity"].get("datetime") or c["date"] or "0000-01-01")
+        if c.get("entities"):
+            return (c["entities"][0]["entity_type"], c.get("date") or "0000-01-01")
+        return ("zzz", c.get("date") or "0000-01-01")
+
+    chains.sort(key=_chain_sort_key, reverse=True)
     return chains
