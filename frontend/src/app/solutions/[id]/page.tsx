@@ -12,8 +12,14 @@ const fields = [
   { name: 'description', label: '描述', type: 'textarea' as const, rows: 4 },
   { name: 'approach', label: '方法', type: 'textarea' as const, rows: 5 },
   { name: 'outcome', label: '结果', type: 'textarea' as const, rows: 5 },
-  { name: 'effectiveness', label: '有效性 (1-5)', type: 'number' as const },
-  { name: 'implemented_date', label: '实施日期', type: 'date' as const },
+  { name: 'effectiveness', label: '有效性', type: 'select' as const, options: [
+    { value: '1', label: '⭐ 1 - 无效' },
+    { value: '2', label: '⭐⭐ 2 - 效果一般' },
+    { value: '3', label: '⭐⭐⭐ 3 - 有效果' },
+    { value: '4', label: '⭐⭐⭐⭐ 4 - 效果很好' },
+    { value: '5', label: '⭐⭐⭐⭐⭐ 5 - 非常有效' },
+  ]},
+  { name: 'implemented_date', label: '实施时间', type: 'datetime-local' as const },
 ];
 
 export default function SolutionDetailPage() {
@@ -32,6 +38,9 @@ export default function SolutionDetailPage() {
   };
 
   const handleEdit = async (formData: Record<string, unknown>) => {
+    if (formData.effectiveness != null) {
+      formData.effectiveness = Number(formData.effectiveness);
+    }
     await fetchAPI(`/solutions/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
     setShowEdit(false);
     mutate();

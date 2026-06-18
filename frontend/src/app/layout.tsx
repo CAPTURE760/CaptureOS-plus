@@ -6,6 +6,9 @@ import Providers from '@/components/Providers';
 export const metadata: Metadata = {
   title: 'CaptureOS - 个人资产管理系统',
   description: '记录和管理你的项目、经验、问题、解决方案、知识、决策和复盘',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

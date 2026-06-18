@@ -15,8 +15,16 @@ const fields = [
     { value: '3', label: '3 - 一般' }, { value: '4', label: '4 - 好' },
     { value: '5', label: '5 - 很好' },
   ]},
-  { name: 'period', label: '复盘周期' },
-  { name: 'review_date', label: '复盘日期', type: 'date' as const },
+  { name: 'period', label: '复盘周期', type: 'select' as const, options: [
+    { value: '日复盘', label: '📅 日复盘 — 每天回顾' },
+    { value: '周复盘', label: '📆 周复盘 — 每周总结' },
+    { value: '月复盘', label: '🗓️ 月复盘 — 每月回顾' },
+    { value: '季度复盘', label: '📊 季度复盘 — 三个月总结' },
+    { value: '年度复盘', label: '📈 年度复盘 — 年终总结' },
+    { value: '项目复盘', label: '📁 项目复盘 — 项目结束后' },
+    { value: '临时复盘', label: '📝 临时复盘 — 单次事件' },
+  ]},
+  { name: 'review_date', label: '复盘时间', type: 'datetime-local' as const },
 ];
 
 export default function ReviewDetailPage() {

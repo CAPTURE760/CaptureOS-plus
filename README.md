@@ -125,45 +125,189 @@
 - **Docker** 20.10+
 - **Docker Compose** v2.0+
 
+---
+
 ### 方式一：预构建镜像（推荐，最快）
 
-```bash
-# 1. 克隆项目（仅下载配置文件，不构建）
-git clone https://github.com/CAPTURE760/CaptureOS-plus.git
-cd CaptureOS-plus
-
-# 2. 使用预构建镜像启动（首次拉取约 2-3 分钟）
-docker compose -f docker-compose.pull.yml up -d
-
-# 3. 运行数据库迁移
-docker compose -f docker-compose.pull.yml exec backend alembic upgrade head
-
-# 4. 完成！访问应用
-```
-
-> 后续更新只需重新拉取镜像：
-> ```bash
-> docker compose -f docker-compose.pull.yml pull
-> docker compose -f docker-compose.pull.yml up -d
-> ```
->
-> 镜像托管在阿里云容器镜像服务（国内 CDN 加速），无需登录即可拉取。
-
-### 方式二：源码构建（适合开发者）
+适合**普通用户**，无需本地构建，从阿里云镜像仓库直接拉取，国内 CDN 加速。
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/CAPTURE760/CaptureOS-plus.git
 cd CaptureOS-plus
 
-# 2. 启动所有服务（首次启动会自动构建镜像，约 5-10 分钟）
+# 2. 一键启动（首次拉取约 2-3 分钟）
+docker compose -f docker-compose.pull.yml up -d
+
+# 3. 运行数据库迁移
+docker compose -f docker-compose.pull.yml exec backend alembic upgrade head
+
+# 4. 完成！访问 http://localhost:3000
+```
+
+**后续更新：**
+
+```bash
+# 拉取最新版本并重启
+docker compose -f docker-compose.pull.yml pull
+docker compose -f docker-compose.pull.yml up -d
+
+# 拉取指定版本（如 v1.1）并重启
+BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml pull
+BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml up -d
+
+# 查看所有可用版本
+curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
+```
+
+**版本管理说明：**
+
+| 标签 | 含义 | 使用场景 |
+|------|------|----------|
+| `latest` | 最新版本（默认） | 日常使用，始终获取最新功能 |
+| `v1.0`、`v1.1`... | 固定版本 | 回滚到稳定版本，或锁定特定版本 |
+
+---
+
+### 方式二：源码构建（适合开发者）
+
+适合**需要修改代码**的开发者，支持热重载，代码修改后自动生效。
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/CAPTURE760/CaptureOS-plus.git
+cd CaptureOS-plus
+
+# 2. 启动所有服务（首次构建约 5-10 分钟）
 docker compose up -d
 
-# 3. 运行数据库迁移（创建表结构 + 索引）
+# 3. 运行数据库迁移
 docker compose exec backend alembic upgrade head
 
-# 4. 完成！访问应用
+# 4. 完成！访问 http://localhost:3000
 ```
+
+**后续更新（代码有改动时）：**
+
+```bash
+# 拉取最新代码
+git pull
+
+# 重建镜像并重启（利用 Docker 层缓存，通常 1-2 分钟）
+docker compose up -d --build
+
+# 如果数据库有新迁移
+docker compose exec backend alembic upgrade head
+```
+
+**本地开发常用命令：**
+
+```bash
+# 查看日志
+docker compose logs -f backend    # 后端日志
+docker compose logs -f frontend   # 前端日志
+
+# 重建单个服务
+docker compose up -d --build backend
+
+# 停止所有服务
+docker compose down
+
+# 停止并删除数据（危险！会清空数据库）
+docker compose down -v
+```
+
+---
+
+### 方式三：Windows 一键启动（最省事）
+
+将 `start.bat` 放到桌面，双击即可自动完成：启动 Docker → 进入 WSL → 启动服务 → 打开浏览器。
+
+**start.bat 内容：**
+
+```bat
+@echo off
+chcp 65001 >nul
+title CaptureOS 启动器
+
+echo ========================================
+echo   CaptureOS 个人资产管理系统
+echo ========================================
+echo.
+
+:: 检查 Docker Desktop
+echo [1/4] 检查 Docker Desktop...
+tasklist /FI "IMAGENAME eq Docker Desktop.exe" 2>NUL | find /I "Docker Desktop.exe" >NUL
+if %ERRORLEVEL% NEQ 0 (
+    echo       启动 Docker Desktop...
+    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    :wait_docker
+    timeout /t 5 /nobreak >nul
+    docker info >nul 2>&1
+    if %ERRORLEVEL% NEQ 0 goto wait_docker
+    echo       Docker Desktop 已就绪
+) else (
+    echo       Docker Desktop 已在运行
+)
+echo.
+
+:: 启动服务
+echo [2/4] 启动 CaptureOS 服务...
+wsl -e bash -c "cd ~/CaptureOS && docker compose up -d"
+echo.
+
+:: 等待服务就绪
+echo [3/4] 等待服务就绪...
+:wait_service
+timeout /t 3 /nobreak >nul
+curl -s http://localhost:3000 >nul 2>&1
+if %ERRORLEVEL% NEQ 0 goto wait_service
+echo       服务已就绪！
+echo.
+
+:: 打开浏览器
+echo [4/4] 打开浏览器...
+start http://localhost:3000
+echo.
+
+echo ========================================
+echo   CaptureOS 已启动！
+echo   前端: http://localhost:3000
+echo   后端: http://localhost:8001/api
+echo   文档: http://localhost:8001/docs
+echo ========================================
+echo.
+pause
+```
+
+---
+
+### 方式四：手机/局域网访问
+
+同一局域网内的手机或其他设备可以通过电脑 IP 访问：
+
+```bash
+# 1. 查看电脑局域网 IP
+ip addr | grep "inet " | grep -v 127.0.0.1
+# 输出类似：inet 192.168.1.100/24
+
+# 2. 手机浏览器访问
+http://192.168.1.100:3000
+```
+
+> 前端会自动检测访问地址，动态请求后端 API，无需额外配置。
+
+---
+
+### 三种方式对比
+
+| | 预构建镜像 | 源码构建 | Windows 一键 |
+|--|-----------|---------|-------------|
+| **首次启动** | 2-3 分钟 | 5-10 分钟 | 3-5 分钟 |
+| **后续更新** | pull 秒级 | build 1-2 分钟 | 自动 |
+| **热重载** | ❌ | ✅ | ✅ |
+| **适合谁** | 普通用户 | 开发者 | 日常使用 |
+| **需要操作** | 3 条命令 | 3 条命令 | 双击 bat |
 
 ### 访问地址
 
@@ -244,7 +388,10 @@ CaptureOS-plus/
 │   ├── Dockerfile
 │   ├── next.config.js
 │   └── package.json
-├── docker-compose.yml
+├── docker-compose.yml              # 源码构建配置
+├── docker-compose.pull.yml         # 预构建镜像配置
+├── start.bat                       # Windows 一键启动脚本
+├── push.sh                         # 构建+推送镜像脚本（开发者用）
 ├── .gitignore
 └── README.md
 ```
@@ -317,7 +464,7 @@ CaptureOS-plus/
 ### 本地开发
 
 ```bash
-# 启动服务（支持热重载，源码构建）
+# 启动服务（源码构建，支持热重载）
 docker compose up -d
 
 # 查看日志
@@ -329,8 +476,19 @@ docker compose down
 
 # 重建镜像（代码修改后）
 docker compose up -d --build
+```
 
-# 使用预构建镜像开发（跳过构建，快速启动）
+### 发布新版本
+
+```bash
+# 1. 代码修改并测试通过后，提交到 GitHub
+git add . && git commit -m "feat: 新功能" && git push
+
+# 2. 构建并推送到阿里云镜像仓库（自动递增版本号）
+bash push.sh
+
+# 3. 别人更新
+docker compose -f docker-compose.pull.yml pull
 docker compose -f docker-compose.pull.yml up -d
 ```
 
@@ -369,7 +527,7 @@ docker compose exec backend alembic upgrade head
 
 ### 1. 端口被占用
 
-修改 `docker-compose.yml` 中的端口映射：
+修改 `docker-compose.yml` 或 `docker-compose.pull.yml` 中的端口映射：
 
 ```yaml
 services:
@@ -388,17 +546,31 @@ services:
 docker compose -f docker-compose.pull.yml up -d
 ```
 
-**备选方案**：使用国内镜像源（已在 Dockerfile 中配置）：
-- 后端：阿里云 Debian 镜像
-- 前端：淘宝 npm 镜像
-
 ### 3. 数据库连接失败
 
 确保 PostgreSQL 容器已完全启动：
 
 ```bash
-docker compose ps  # 检查容器状态
-docker compose logs db  # 查看数据库日志
+docker compose ps          # 检查容器状态
+docker compose logs db     # 查看数据库日志
+```
+
+### 4. 手机/局域网访问加载不全
+
+前端会自动根据访问地址请求后端 API。确保：
+- 后端 CORS 已设置为允许所有来源（已默认配置）
+- 使用电脑的局域网 IP 访问（如 `http://192.168.1.100:3000`）
+- 不要用 `localhost`（手机上的 localhost 指向手机自身）
+
+### 5. 如何回滚到旧版本
+
+```bash
+# 查看所有可用版本
+curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
+
+# 回滚到指定版本
+BACKEND_TAG=v1.0 FRONTEND_TAG=v1.0 docker compose -f docker-compose.pull.yml pull
+BACKEND_TAG=v1.0 FRONTEND_TAG=v1.0 docker compose -f docker-compose.pull.yml up -d
 ```
 
 ---

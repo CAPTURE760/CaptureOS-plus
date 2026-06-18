@@ -32,7 +32,13 @@ class SolutionBase(BaseModel):
 
 
 class SolutionCreate(SolutionBase):
-    pass
+
+    @field_validator("effectiveness")
+    @classmethod
+    def validate_effectiveness(cls, v):
+        if v is not None and (v < 1 or v > 5):
+            raise ValueError("有效性必须在 1-5 之间")
+        return v
 
 
 class SolutionUpdate(BaseModel):
@@ -42,6 +48,13 @@ class SolutionUpdate(BaseModel):
     outcome: Optional[str] = None
     effectiveness: Optional[int] = None
     implemented_date: Optional[datetime] = None
+
+    @field_validator("effectiveness")
+    @classmethod
+    def validate_effectiveness(cls, v):
+        if v is not None and (v < 1 or v > 5):
+            raise ValueError("有效性必须在 1-5 之间")
+        return v
 
 
 class SolutionResponse(SolutionBase):

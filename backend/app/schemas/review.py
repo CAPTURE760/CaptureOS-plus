@@ -34,7 +34,13 @@ class ReviewBase(BaseModel):
 
 
 class ReviewCreate(ReviewBase):
-    pass
+
+    @field_validator("rating")
+    @classmethod
+    def validate_rating(cls, v):
+        if v is not None and (v < 1 or v > 5):
+            raise ValueError("评分必须在 1-5 之间")
+        return v
 
 
 class ReviewUpdate(BaseModel):
@@ -46,6 +52,13 @@ class ReviewUpdate(BaseModel):
     rating: Optional[int] = None
     period: Optional[str] = None
     review_date: Optional[datetime] = None
+
+    @field_validator("rating")
+    @classmethod
+    def validate_rating(cls, v):
+        if v is not None and (v < 1 or v > 5):
+            raise ValueError("评分必须在 1-5 之间")
+        return v
 
 
 class ReviewResponse(ReviewBase):

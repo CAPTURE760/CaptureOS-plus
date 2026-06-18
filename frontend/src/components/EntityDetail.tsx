@@ -240,9 +240,15 @@ export default function EntityDetail({
           <h1 className="text-2xl font-bold">{String(entity.title)}</h1>
         </div>
 
+        {/* 短字段：2-3列网格 */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
           {Object.entries(entity).map(([key, value]) => {
             if (skipFields.includes(key) || key === 'title') return null;
+            // 长文本字段跳过，下面单独渲染
+            if (['description', 'root_cause', 'content', 'approach', 'outcome', 'lesson',
+                 'background', 'reason', 'event_summary', 'result', 'context',
+                 'success_factors', 'failure_factors', 'improvements', 'summary',
+                 'options', 'source_url', 'github_url', 'tech_stack', 'run_command'].includes(key)) return null;
             return (
               <div key={key}>
                 <span className="text-sm text-gray-500 block">
@@ -253,6 +259,24 @@ export default function EntityDetail({
             );
           })}
         </div>
+
+        {/* 长文本字段：独占整行，完全展开 */}
+        {Object.entries(entity).map(([key, value]) => {
+          if (skipFields.includes(key) || key === 'title') return null;
+          if (!['description', 'root_cause', 'content', 'approach', 'outcome', 'lesson',
+                'background', 'reason', 'event_summary', 'result', 'context',
+                'success_factors', 'failure_factors', 'improvements', 'summary',
+                'options', 'source_url', 'github_url', 'tech_stack', 'run_command'].includes(key)) return null;
+          if (value === null || value === undefined || value === '') return null;
+          return (
+            <div key={key} className="mb-4">
+              <span className="text-sm text-gray-500 block mb-1">
+                {FIELD_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              </span>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed">{renderField(key, value)}</div>
+            </div>
+          );
+        })}
 
         {/* 标签 */}
         <div className="border-t pt-4">

@@ -53,6 +53,7 @@ export default function RelationPicker({
   const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
   const [relationTypeId, setRelationTypeId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [toast, setToast] = useState('');
 
   // 获取关系类型
   const { data: relationTypes } = useSWR<RelationType[]>('/relations/types/', fetchAPI);
@@ -60,6 +61,17 @@ export default function RelationPicker({
   // 获取目标类型的实体列表
   const apiPath = ENTITY_API_PATH[targetType] || targetType;
   const { data: entities } = useSWR<EntityItem[]>(`/${apiPath}/?limit=100`, fetchAPI);
+
+  // 获取当前实体已有的关联，用于去重
+  const sourceApiPath = ENTITY_API_PATH[sourceType] || sourceType;
+  const { data: relatedData } = useSWR<{ relations: { target_id: number; target_type: string }[] }>(
+    `/${sourceApiPath}/${sourceId}/related`, fetchAPI
+  );
+  const relatedIds = new Set(
+    relatedData?.relations
+      ?.filter((r) => r.target_type === targetType)
+      .map((r) => r.target_id) || []
+  );
 
   // 过滤搜索
   const filteredEntities = entities?.filter((e) =>
@@ -73,6 +85,12 @@ export default function RelationPicker({
   const handleCreate = async () => {
     if (!selectedEntityId || !effectiveRelationTypeId) return;
 
+    if (relatedIds.has(selectedEntityId)) {
+      setToast('⚠️ 已关联过，无需重复操作');
+      setTimeout(() => setToast(''), 2000);
+      return;
+    }
+
     await fetchAPI('/relations/', {
       method: 'POST',
       body: JSON.stringify({
@@ -83,12 +101,20 @@ export default function RelationPicker({
         relation_type_id: effectiveRelationTypeId,
       }),
     });
-    onCreated();
+    setToast('✅ 关联成功');
+    setTimeout(() => {
+      onCreated();
+    }, 800);
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 md:mx-0 max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 md:mx-0 max-h-[80vh] overflow-hidden relative">
+        {toast && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg text-sm shadow-lg z-10 animate-pulse">
+            {toast}
+          </div>
+        )}
         <div className="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
           <h3 className="font-semibold">
             🔗 关联{ENTITY_LABELS[targetType] || targetType}
@@ -133,19 +159,25 @@ export default function RelationPicker({
             {filteredEntities.length === 0 ? (
               <div className="p-4 text-center text-gray-400 text-sm">暂无数据</div>
             ) : (
-              filteredEntities.map((entity) => (
-                <div
-                  key={entity.id}
-                  onClick={() => setSelectedEntityId(entity.id)}
-                  className={`px-3 py-2 cursor-pointer border-b border-gray-100 last:border-0 text-sm ${
-                    selectedEntityId === entity.id
-                      ? 'bg-blue-50 border-l-2 border-l-blue-500'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {entity.title}
-                </div>
-              ))
+              filteredEntities.map((entity) => {
+                const isAlreadyRelated = relatedIds.has(entity.id);
+                return (
+                  <div
+                    key={entity.id}
+                    onClick={() => !isAlreadyRelated && setSelectedEntityId(entity.id)}
+                    className={`px-3 py-2 border-b border-gray-100 last:border-0 text-sm ${
+                      isAlreadyRelated
+                        ? 'bg-gray-50 text-gray-400 cursor-default line-through'
+                        : selectedEntityId === entity.id
+                          ? 'bg-blue-50 border-l-2 border-l-blue-500 cursor-pointer'
+                          : 'hover:bg-gray-50 cursor-pointer'
+                    }`}
+                  >
+                    {entity.title}
+                    {isAlreadyRelated && <span className="ml-2 text-green-500 line-through-none">✅ 已关联</span>}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

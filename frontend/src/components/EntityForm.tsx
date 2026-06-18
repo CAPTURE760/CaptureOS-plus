@@ -9,6 +9,8 @@ interface Field {
   options?: { value: string; label: string }[];
   required?: boolean;
   rows?: number;
+  min?: number;
+  max?: number;
 }
 
 interface EntityFormProps {
@@ -163,6 +165,8 @@ function FormFields({
               value={(formData[field.name] as number) || ''}
               onChange={(e) => handleChange(field.name, Number(e.target.value))}
               required={field.required}
+              min={field.min}
+              max={field.max}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           ) : (
