@@ -231,7 +231,9 @@ docker compose down -v
 
 ### 方式三：Windows 一键启动（最省事）
 
-将 `start.bat` 放到桌面，双击即可自动完成：启动 Docker → 进入 WSL → 启动服务 → 打开浏览器。
+适合 **Windows 用户日常使用**，将 `start.bat` 放到桌面，双击即可：启动 Docker → 启动服务 → 打开浏览器。
+
+> 注意：需修改 bat 文件中 Docker Desktop 的路径为你的实际安装路径。
 
 **start.bat 内容：**
 
@@ -245,12 +247,14 @@ echo   CaptureOS 个人资产管理系统
 echo ========================================
 echo.
 
-:: 检查 Docker Desktop
+:: 检查 Docker Desktop（修改为你的实际路径）
+set DOCKER_PATH=D:\Docker\Docker Desktop.exe
+
 echo [1/4] 检查 Docker Desktop...
 tasklist /FI "IMAGENAME eq Docker Desktop.exe" 2>NUL | find /I "Docker Desktop.exe" >NUL
 if %ERRORLEVEL% NEQ 0 (
     echo       启动 Docker Desktop...
-    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    start "" "%DOCKER_PATH%"
     :wait_docker
     timeout /t 5 /nobreak >nul
     docker info >nul 2>&1
@@ -261,7 +265,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo.
 
-:: 启动服务
+:: 启动服务（源码构建模式，支持热重载）
 echo [2/4] 启动 CaptureOS 服务...
 wsl -e bash -c "cd ~/CaptureOS && docker compose up -d"
 echo.
@@ -312,15 +316,17 @@ http://192.168.1.100:3000
 
 ---
 
-### 三种方式对比
+### 方式对比
 
-| | 预构建镜像 | 源码构建 | Windows 一键 |
-|--|-----------|---------|-------------|
+| | 预构建镜像 | 源码构建 | Windows 一键启动 |
+|--|-----------|---------|-----------------|
 | **首次启动** | 2-3 分钟 | 5-10 分钟 | 3-5 分钟 |
-| **后续更新** | pull 秒级 | build 1-2 分钟 | 自动 |
-| **热重载** | ❌ | ✅ | ✅ |
-| **适合谁** | 普通用户 | 开发者 | 日常使用 |
+| **后续更新** | `pull` 秒级 | `build` 1-2 分钟 | `git pull` + 双击 bat |
+| **热重载** | ❌ 改代码要重新推送 | ✅ 自动生效 | ✅ 自动生效 |
+| **适合谁** | 普通用户 | 开发者 | Windows 日常使用 |
 | **需要操作** | 3 条命令 | 3 条命令 | 双击 bat |
+
+> **Windows 一键启动** 本质是方式二（源码构建）的便捷入口，区别只是不用手动敲命令。
 
 ### 访问地址
 
