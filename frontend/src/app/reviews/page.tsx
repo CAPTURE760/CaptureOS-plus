@@ -145,6 +145,7 @@ export default function ReviewsPage() {
     setEditingItem(null);
     mutate();
     globalMutate('/reviews/count/');
+    globalMutate('/dashboard/');
   };
 
   const handleDelete = async (item: Review) => {
@@ -152,6 +153,7 @@ export default function ReviewsPage() {
       await fetchAPI(`/reviews/${item.id}`, { method: 'DELETE' });
       mutate();
       globalMutate('/reviews/count/');
+      globalMutate('/dashboard/');
     }
   };
 

@@ -153,6 +153,7 @@ export default function KnowledgePage() {
     setEditingItem(null);
     mutate();
     globalMutate('/knowledges/count/');
+    globalMutate('/dashboard/');
   };
 
   const handleDelete = async (item: Knowledge) => {
@@ -160,6 +161,7 @@ export default function KnowledgePage() {
       await fetchAPI(`/knowledges/${item.id}`, { method: 'DELETE' });
       mutate();
       globalMutate('/knowledges/count/');
+      globalMutate('/dashboard/');
     }
   };
 

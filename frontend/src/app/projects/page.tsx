@@ -190,6 +190,7 @@ export default function ProjectsPage() {
     setEditingItem(null);
     mutate();
     globalMutate('/projects/count/');
+    globalMutate('/dashboard/');
   };
 
   const handleDelete = async (item: Project) => {
@@ -197,6 +198,7 @@ export default function ProjectsPage() {
       await fetchAPI(`/projects/${item.id}`, { method: 'DELETE' });
       mutate();
       globalMutate('/projects/count/');
+      globalMutate('/dashboard/');
     }
   };
 

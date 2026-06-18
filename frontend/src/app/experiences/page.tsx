@@ -144,6 +144,7 @@ export default function ExperiencesPage() {
     setEditingItem(null);
     mutate();
     globalMutate('/experiences/count/');
+    globalMutate('/dashboard/');
   };
 
   const handleDelete = async (item: Experience) => {
@@ -151,6 +152,7 @@ export default function ExperiencesPage() {
       await fetchAPI(`/experiences/${item.id}`, { method: 'DELETE' });
       mutate();
       globalMutate('/experiences/count/');
+      globalMutate('/dashboard/');
     }
   };
 
