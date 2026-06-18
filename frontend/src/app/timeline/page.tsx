@@ -10,6 +10,7 @@ interface TimelineEvent {
   entity_id: number;
   title: string;
   date: string;
+  datetime?: string;
   status?: string;
   rating?: number;
   effectiveness?: number;
@@ -180,7 +181,11 @@ function FlatItem({ event, router }: { event: TimelineEvent; router: ReturnType<
         </div>
         <h3 className="font-medium">{event.title}</h3>
         <p className="text-sm text-gray-500">
-          {new Date(event.date).toLocaleDateString('zh-CN')}
+          {event.datetime
+            ? new Date(event.datetime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : event.date
+              ? new Date(event.date).toLocaleDateString('zh-CN')
+              : '-'}
         </p>
       </div>
     </div>
@@ -211,7 +216,7 @@ function ChainItem({ item, router }: { item: ChainEvent; router: ReturnType<type
         </div>
         <h3 className="font-medium">{item.title}</h3>
         <p className="text-sm text-gray-500">
-          {item.date ? new Date(item.date).toLocaleDateString('zh-CN') : '-'}
+          {item.date ? new Date(item.date + 'T00:00:00').toLocaleDateString('zh-CN') : '-'}
         </p>
 
         {expanded && item.entities && (

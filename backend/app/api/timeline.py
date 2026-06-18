@@ -49,6 +49,21 @@ def _get_date(item, date_field_name: str) -> date | None:
     return None
 
 
+def _get_datetime(item, date_field_name: str) -> str | None:
+    """获取实体的完整时间戳，返回 ISO 格式字符串。"""
+    from datetime import datetime as dt
+    d = getattr(item, date_field_name, None)
+    if d is None:
+        d = getattr(item, "created_at", None)
+    if d is None:
+        return None
+    if isinstance(d, dt):
+        return d.isoformat()
+    if isinstance(d, date):
+        return d.isoformat()
+    return None
+
+
 def _in_range(d: date | None, start: date | None, end: date | None) -> bool:
     """判断日期是否在范围内。d 为 None 时视为不在范围内。"""
     if d is None:
@@ -87,6 +102,7 @@ async def get_timeline(
                 "entity_id": item.id,
                 "title": item.title,
                 "date": d.isoformat() if d else None,
+                "datetime": _get_datetime(item, date_field_name),
             }
             # 附加额外字段
             if hasattr(item, "status"):
@@ -97,7 +113,7 @@ async def get_timeline(
                 entry["effectiveness"] = item.effectiveness
             events.append(entry)
 
-    events.sort(key=lambda x: x["date"] or "0000-01-01", reverse=True)
+    events.sort(key=lambda x: (x["entity_type"], x["datetime"] or x["date"] or "0000-01-01"), reverse=True)
     return events
 
 
