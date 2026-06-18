@@ -66,6 +66,14 @@ export default function TimelinePage() {
     ? (data as TimelineEvent[])?.filter((e) => e.entity_type === entityType)
     : data;
 
+  // 快捷按钮 active 判断
+  const today = fmt(new Date());
+  const now = new Date();
+  const weekday = now.getDay() || 7;
+  const monday = new Date(now); monday.setDate(now.getDate() - weekday + 1);
+  const thisWeekStart = fmt(monday);
+  const thisMonthStart = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -91,22 +99,14 @@ export default function TimelinePage() {
         <div className="flex gap-4 items-end">
           {/* 快捷按钮 */}
           <div className="flex gap-1.5">
-            <QuickBtn label="今天" onClick={() => {
-              const t = fmt(new Date());
-              setStartDate(t); setEndDate(t);
-            }} />
-            <QuickBtn label="本周" onClick={() => {
-              const now = new Date();
-              const day = now.getDay() || 7; // 1=Mon, 7=Sun
-              const mon = new Date(now); mon.setDate(now.getDate() - day + 1);
-              setStartDate(fmt(mon)); setEndDate(fmt(now));
-            }} />
-            <QuickBtn label="本月" onClick={() => {
-              const now = new Date();
-              const first = new Date(now.getFullYear(), now.getMonth(), 1);
-              setStartDate(fmt(first)); setEndDate(fmt(now));
-            }} />
-            <QuickBtn label="全部" onClick={() => { setStartDate(''); setEndDate(''); }} active={!startDate && !endDate} />
+            <QuickBtn label="今天" onClick={() => { setStartDate(today); setEndDate(today); }}
+              active={startDate === today && endDate === today} />
+            <QuickBtn label="本周" onClick={() => { setStartDate(thisWeekStart); setEndDate(today); }}
+              active={startDate === thisWeekStart && endDate === today} />
+            <QuickBtn label="本月" onClick={() => { setStartDate(thisMonthStart); setEndDate(today); }}
+              active={startDate === thisMonthStart && endDate === today} />
+            <QuickBtn label="全部" onClick={() => { setStartDate(''); setEndDate(''); }}
+              active={!startDate && !endDate} />
           </div>
 
           <div>

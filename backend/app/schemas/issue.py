@@ -1,7 +1,18 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+BJT = timezone(timedelta(hours=8))
+
+
+def _to_bjt(v: datetime | None) -> datetime | None:
+    """将无时区的 datetime 视为北京时间，加上时区信息。"""
+    if v is None:
+        return None
+    if v.tzinfo is None:
+        return v.replace(tzinfo=BJT)
+    return v
 
 
 class IssueBase(BaseModel):
@@ -12,6 +23,11 @@ class IssueBase(BaseModel):
     root_cause: Optional[str] = None
     discovered_date: Optional[datetime] = None
     resolved_date: Optional[date] = None
+
+    @field_validator("discovered_date", mode="before")
+    @classmethod
+    def parse_discovered_date(cls, v):
+        return _to_bjt(v)
 
 
 class IssueCreate(IssueBase):
@@ -26,6 +42,11 @@ class IssueUpdate(BaseModel):
     root_cause: Optional[str] = None
     discovered_date: Optional[datetime] = None
     resolved_date: Optional[date] = None
+
+    @field_validator("discovered_date", mode="before")
+    @classmethod
+    def parse_discovered_date(cls, v):
+        return _to_bjt(v)
 
 
 class IssueResponse(IssueBase):
