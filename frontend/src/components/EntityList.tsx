@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import TagPicker from './TagPicker';
@@ -86,24 +86,39 @@ export default function EntityList<T extends { id: number }>({
 }: EntityListProps<T>) {
   const [tagPickerItem, setTagPickerItem] = useState<T | null>(null);
   const [showBatchTag, setShowBatchTag] = useState(false);
-  const { data: allTags } = useSWR<Tag[]>('/tags/', fetchAPI);
+  const { data: allTags } = useSWR<Tag[]>('/tags/', fetchAPI, {
+    dedupingInterval: 60000, // 标签数据很少变，60 秒内不去重
+    revalidateOnFocus: false,
+  });
   const { data: allEntityTags, mutate: mutateEntityTags } = useSWR<EntityTag[]>(
     `/tags/entity/${entityType}`,
-    fetchAPI
+    fetchAPI,
+    { dedupingInterval: 30000 }
   );
 
   const hasBatchActions = !!onBatchDelete || !!onBatchTag;
   const selectedCount = selectedIds?.size || 0;
   const allSelected = data.length > 0 && data.every(item => selectedIds?.has(item.id));
 
-  // 获取某个实体的标签
-  const getEntityTags = (entityId: number): Tag[] => {
-    if (!allEntityTags || !allTags) return [];
-    const tagIds = allEntityTags
-      .filter((et) => et.entity_id === entityId)
-      .map((et) => et.tag_id);
-    return allTags.filter((t) => tagIds.includes(t.id));
-  };
+  // 预计算每个实体的标签映射
+  const entityTagMap = useMemo(() => {
+    if (!allEntityTags || !allTags) return new Map<number, Tag[]>();
+    const tagMap = new Map<number, Tag[]>();
+    // 按 entity_id 分组
+    const grouped = new Map<number, number[]>();
+    for (const et of allEntityTags) {
+      const ids = grouped.get(et.entity_id) || [];
+      ids.push(et.tag_id);
+      grouped.set(et.entity_id, ids);
+    }
+    // 转换为 Tag 对象
+    for (const [entityId, tagIds] of grouped) {
+      tagMap.set(entityId, allTags.filter(t => tagIds.includes(t.id)));
+    }
+    return tagMap;
+  }, [allEntityTags, allTags]);
+
+  const getEntityTags = (entityId: number): Tag[] => entityTagMap.get(entityId) || [];
 
   return (
     <div>

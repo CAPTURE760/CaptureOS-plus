@@ -108,21 +108,21 @@ export default function ReviewsPage() {
 
   const handleBatchDelete = async () => {
     if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
-    for (const id of selectedIds) {
-      await fetchAPI(`/reviews/${id}`, { method: 'DELETE' });
-    }
+    await Promise.all(Array.from(selectedIds).map(id =>
+      fetchAPI(`/reviews/${id}`, { method: 'DELETE' })
+    ));
     setSelectedIds(new Set());
     mutate();
     globalMutate('/reviews/count/');
   };
 
   const handleBatchTag = async (tagId: number) => {
-    for (const id of selectedIds) {
-      await fetchAPI('/tags/assign', {
+    await Promise.all(Array.from(selectedIds).map(id =>
+      fetchAPI('/tags/assign', {
         method: 'POST',
         body: JSON.stringify({ entity_type: 'review', entity_id: id, tag_id: tagId }),
-      });
-    }
+      })
+    ));
     setSelectedIds(new Set());
     mutate();
   };
