@@ -42,15 +42,15 @@ const entityRoutes: Record<string, string> = {
   solution: '/solutions', knowledge: '/knowledge', decision: '/decisions', review: '/reviews',
 };
 
+const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 export default function TimelinePage() {
   const router = useRouter();
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const today = fmt(new Date());
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
   const [entityType, setEntityType] = useState('');
   const [viewMode, setViewMode] = useState<'flat' | 'chains'>('chains');
-
-  // 日期格式化：避免 toISOString 的时区偏移问题
-  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   const queryParams = new URLSearchParams();
   if (startDate) queryParams.set('start_date', startDate);
