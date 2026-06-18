@@ -65,6 +65,8 @@ export default function SearchPage() {
   const [query, setQuery] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   // 获取所有标签
@@ -74,9 +76,11 @@ export default function SearchPage() {
   if (query.trim()) params.set('q', query.trim());
   if (entityFilter) params.set('entity_type', entityFilter);
   if (tagFilter) params.set('tag_id', tagFilter);
+  if (startDate) params.set('start_date', startDate);
+  if (endDate) params.set('end_date', endDate);
 
   // 有筛选条件或已提交搜索时触发请求
-  const shouldFetch = submitted || entityFilter || tagFilter;
+  const shouldFetch = submitted || entityFilter || tagFilter || startDate || endDate;
   const { data, error, isLoading } = useSWR<SearchResponse>(
     shouldFetch ? `/search/?${params.toString()}` : null,
     fetchAPI
@@ -100,7 +104,7 @@ export default function SearchPage() {
 
       {/* Search Form */}
       <form onSubmit={handleSearch} className="bg-white p-4 rounded-lg shadow mb-6">
-        <div className="flex gap-3">
+        <div className="flex gap-3 mb-3">
           <input
             type="text"
             value={query}
@@ -132,6 +136,20 @@ export default function SearchPage() {
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
             搜索
           </button>
+        </div>
+        <div className="flex gap-3 items-center text-sm">
+          <div className="flex gap-1.5">
+            <DateQuickBtn label="今天" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} preset="today" />
+            <DateQuickBtn label="本周" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} preset="week" />
+            <DateQuickBtn label="本月" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} preset="month" />
+            <DateQuickBtn label="全部时间" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} preset="all" />
+          </div>
+          <span className="text-gray-400">|</span>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+            className="px-2 py-1.5 border border-gray-300 rounded text-sm" />
+          <span className="text-gray-400">~</span>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+            className="px-2 py-1.5 border border-gray-300 rounded text-sm" />
         </div>
       </form>
 
@@ -195,5 +213,41 @@ function SearchResultItem({ result, query }: { result: SearchResult; query: stri
         <p className="text-gray-600 text-sm"><HighlightText text={result.snippet} query={query} /></p>
       )}
     </div>
+  );
+}
+
+const fmtDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function DateQuickBtn({ label, startDate, endDate, setStartDate, setEndDate, preset }: {
+  label: string; startDate: string; endDate: string;
+  setStartDate: (v: string) => void; setEndDate: (v: string) => void;
+  preset: 'today' | 'week' | 'month' | 'all';
+}) {
+  const now = new Date();
+  const today = fmtDate(now);
+  const weekday = now.getDay() || 7;
+  const monday = new Date(now); monday.setDate(now.getDate() - weekday + 1);
+  const thisWeekStart = fmtDate(monday);
+  const thisMonthStart = fmtDate(new Date(now.getFullYear(), now.getMonth(), 1));
+
+  const active = preset === 'all' ? !startDate && !endDate :
+    preset === 'today' ? startDate === today && endDate === today :
+    preset === 'week' ? startDate === thisWeekStart && endDate === today :
+    startDate === thisMonthStart && endDate === today;
+
+  const handleClick = () => {
+    if (preset === 'today') { setStartDate(today); setEndDate(today); }
+    else if (preset === 'week') { setStartDate(thisWeekStart); setEndDate(today); }
+    else if (preset === 'month') { setStartDate(thisMonthStart); setEndDate(today); }
+    else { setStartDate(''); setEndDate(''); }
+  };
+
+  return (
+    <button type="button" onClick={handleClick}
+      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+        active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+      }`}>
+      {label}
+    </button>
   );
 }

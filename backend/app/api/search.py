@@ -1,4 +1,5 @@
-"""Search API — 支持中文子串匹配和标签筛选。"""
+"""Search API — 支持中文子串匹配、标签筛选和日期范围。"""
+from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +33,8 @@ async def search(
     q: str | None = Query(None),
     entity_type: str | None = None,
     tag_id: int | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     results = []
@@ -65,6 +68,18 @@ async def search(
             # 如果有标签筛选，检查实体是否在标签关联中
             if tag_entity_filter is not None:
                 if (etype, item.id) not in tag_entity_filter:
+                    continue
+
+            # 日期范围筛选：用 created_at 过滤
+            if start_date or end_date:
+                created = getattr(item, "created_at", None)
+                if created is None:
+                    continue
+                # datetime → date
+                item_date = created.date() if hasattr(created, "date") else created
+                if start_date and item_date < start_date:
+                    continue
+                if end_date and item_date > end_date:
                     continue
 
             results.append({
