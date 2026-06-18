@@ -87,6 +87,8 @@ const FIELD_LABELS: Record<string, string> = {
   result: '结果', context: '上下文', period: '复盘周期',
   success_factors: '成功因素', failure_factors: '失败因素',
   improvements: '改进措施', review_date: '复盘日期',
+  event_date: '事件日期', implemented_date: '实施日期',
+  options: '选项', decision_date: '决策日期',
   rating: '评分', run_command: '运行方式',
   tech_stack: '技术栈', source_url: '源文件地址', github_url: 'GitHub 地址',
   tool: '使用工具',
