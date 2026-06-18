@@ -1,7 +1,20 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+BJT = timezone(timedelta(hours=8))
+
+
+def _to_bjt(v) -> datetime | None:
+    if v is None:
+        return None
+    if isinstance(v, str):
+        v = datetime.fromisoformat(v)
+    if isinstance(v, datetime) and v.tzinfo is None:
+        return v.replace(tzinfo=BJT)
+    return v
 
 
 class ReviewBase(BaseModel):
@@ -12,7 +25,12 @@ class ReviewBase(BaseModel):
     improvements: Optional[dict[str, Any]] = None
     rating: Optional[int] = None
     period: Optional[str] = None
-    review_date: Optional[date] = None
+    review_date: Optional[datetime] = None
+
+    @field_validator("review_date", mode="before")
+    @classmethod
+    def parse_review_date(cls, v):
+        return _to_bjt(v)
 
 
 class ReviewCreate(ReviewBase):
@@ -27,7 +45,7 @@ class ReviewUpdate(BaseModel):
     improvements: Optional[dict[str, Any]] = None
     rating: Optional[int] = None
     period: Optional[str] = None
-    review_date: Optional[date] = None
+    review_date: Optional[datetime] = None
 
 
 class ReviewResponse(ReviewBase):

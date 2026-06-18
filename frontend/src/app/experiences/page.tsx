@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
-import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
+import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
@@ -27,7 +27,7 @@ const fields = [
   { name: 'context', label: '背景', type: 'textarea' as const, rows: 5 },
   { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'lesson', label: '教训', type: 'textarea' as const, rows: 5 },
-  { name: 'event_date', label: '事件日期', type: 'date' as const },
+  { name: 'event_date', label: '事件时间', type: 'datetime-local' as const },
 ];
 
 const columns = [
@@ -54,9 +54,9 @@ const columns = [
   },
   {
     key: 'event_date',
-    label: '事件日期',
+    label: '事件时间',
     render: (item: Experience) => (
-      <span className="whitespace-nowrap">📅 {formatBeijingDate(item.event_date)}</span>
+      <span className="whitespace-nowrap">📅 {item.event_date ? new Date(item.event_date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</span>
     ),
     width: '12%',
   },

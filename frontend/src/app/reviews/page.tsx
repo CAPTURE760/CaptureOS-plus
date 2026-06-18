@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
-import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
+import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
@@ -39,7 +39,7 @@ const fields = [
     ],
   },
   { name: 'period', label: '复盘周期' },
-  { name: 'review_date', label: '复盘日期', type: 'date' as const },
+  { name: 'review_date', label: '复盘时间', type: 'datetime-local' as const },
 ];
 
 const columns = [
@@ -55,9 +55,9 @@ const columns = [
   { key: 'period', label: '周期', width: '12%' },
   {
     key: 'review_date',
-    label: '复盘日期',
+    label: '复盘时间',
     render: (item: Review) => (
-      <span className="whitespace-nowrap">📅 {formatBeijingDate(item.review_date)}</span>
+      <span className="whitespace-nowrap">📅 {item.review_date ? new Date(item.review_date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</span>
     ),
     width: '15%',
   },

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
-import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
+import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
@@ -28,7 +28,7 @@ const fields = [
   { name: 'background', label: '背景', type: 'textarea' as const, rows: 5 },
   { name: 'reason', label: '理由', type: 'textarea' as const, rows: 5 },
   { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
-  { name: 'decision_date', label: '决策日期', type: 'date' as const },
+  { name: 'decision_date', label: '决策时间', type: 'datetime-local' as const },
   {
     name: 'status', label: '状态', type: 'select' as const,
     options: [
@@ -75,9 +75,9 @@ const columns = [
   },
   {
     key: 'decision_date',
-    label: '决策日期',
+    label: '决策时间',
     render: (item: Decision) => (
-      <span className="whitespace-nowrap">📅 {formatBeijingDate(item.decision_date)}</span>
+      <span className="whitespace-nowrap">📅 {item.decision_date ? new Date(item.decision_date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</span>
     ),
     width: '15%',
   },

@@ -16,7 +16,7 @@ class Experience(Base):
     context: Mapped[str | None] = mapped_column(Text, nullable=True)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
     lesson: Mapped[str | None] = mapped_column(Text, nullable=True)
-    event_date: Mapped[date_type | None] = mapped_column(nullable=True)
+    event_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

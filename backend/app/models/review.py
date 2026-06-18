@@ -18,7 +18,7 @@ class Review(Base):
     improvements: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     rating: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     period: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    review_date: Mapped[date | None] = mapped_column(nullable=True)
+    review_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
-import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
+import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
@@ -40,8 +40,8 @@ const fields = [
       { value: 'cancelled', label: '已取消' },
     ],
   },
-  { name: 'start_date', label: '开始日期', type: 'date' as const },
-  { name: 'end_date', label: '结束日期', type: 'date' as const },
+  { name: 'start_date', label: '开始时间', type: 'datetime-local' as const },
+  { name: 'end_date', label: '结束时间', type: 'datetime-local' as const },
   {
     name: 'priority', label: '优先级', type: 'select' as const,
     options: [

@@ -30,13 +30,18 @@ export default function EntityForm({
   cancelLabel = '取消',
   title,
 }: EntityFormProps) {
-  // 新建时，date 类型字段默认填今天日期
+  // 新建时，date 类型字段默认填今天日期，datetime-local 默认填当前时间
   const getDefaultData = () => {
     const data = { ...initialData };
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const localNow = `${today}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     fields.forEach((field) => {
       if (field.type === 'date' && !data[field.name]) {
         data[field.name] = today;
+      }
+      if (field.type === 'datetime-local' && !data[field.name]) {
+        data[field.name] = localNow;
       }
     });
     return data;

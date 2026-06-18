@@ -16,7 +16,7 @@ class Decision(Base):
     options: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
-    decision_date: Mapped[date | None] = mapped_column(nullable=True)
+    decision_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     confidence: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     status: Mapped[str] = mapped_column(String(20), server_default="pending")
     created_at: Mapped[datetime] = mapped_column(

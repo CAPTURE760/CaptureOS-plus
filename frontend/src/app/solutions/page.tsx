@@ -27,7 +27,7 @@ const fields = [
   { name: 'approach', label: '方法', type: 'textarea' as const, rows: 5 },
   { name: 'outcome', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'effectiveness', label: '有效性 (1-5)', type: 'number' as const },
-  { name: 'implemented_date', label: '实施日期', type: 'date' as const },
+  { name: 'implemented_date', label: '实施时间', type: 'datetime-local' as const },
 ];
 
 const columns = [
@@ -42,10 +42,10 @@ const columns = [
   },
   {
     key: 'implemented_date',
-    label: '实施日期',
+    label: '实施时间',
     render: (item: Solution) => (
       <span className="whitespace-nowrap">
-        📅 {item.implemented_date ? new Date(item.implemented_date).toLocaleDateString('zh-CN') : '-'}
+        📅 {item.implemented_date ? new Date(item.implemented_date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
       </span>
     ),
     width: '15%',

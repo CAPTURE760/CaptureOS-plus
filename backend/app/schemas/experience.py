@@ -1,7 +1,20 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+BJT = timezone(timedelta(hours=8))
+
+
+def _to_bjt(v) -> datetime | None:
+    if v is None:
+        return None
+    if isinstance(v, str):
+        v = datetime.fromisoformat(v)
+    if isinstance(v, datetime) and v.tzinfo is None:
+        return v.replace(tzinfo=BJT)
+    return v
 
 
 class ExperienceBase(BaseModel):
@@ -10,7 +23,12 @@ class ExperienceBase(BaseModel):
     context: Optional[str] = None
     result: Optional[str] = None
     lesson: Optional[str] = None
-    event_date: Optional[date] = None
+    event_date: Optional[datetime] = None
+
+    @field_validator("event_date", mode="before")
+    @classmethod
+    def parse_event_date(cls, v):
+        return _to_bjt(v)
 
 
 class ExperienceCreate(ExperienceBase):
@@ -23,7 +41,7 @@ class ExperienceUpdate(BaseModel):
     context: Optional[str] = None
     result: Optional[str] = None
     lesson: Optional[str] = None
-    event_date: Optional[date] = None
+    event_date: Optional[datetime] = None
 
 
 class ExperienceResponse(ExperienceBase):

@@ -1,7 +1,20 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+BJT = timezone(timedelta(hours=8))
+
+
+def _to_bjt(v) -> datetime | None:
+    if v is None:
+        return None
+    if isinstance(v, str):
+        v = datetime.fromisoformat(v)
+    if isinstance(v, datetime) and v.tzinfo is None:
+        return v.replace(tzinfo=BJT)
+    return v
 
 
 class DecisionBase(BaseModel):
@@ -10,9 +23,14 @@ class DecisionBase(BaseModel):
     options: Optional[dict[str, Any]] = None
     reason: Optional[str] = None
     result: Optional[str] = None
-    decision_date: Optional[date] = None
+    decision_date: Optional[datetime] = None
     confidence: Optional[int] = None
     status: str = "pending"
+
+    @field_validator("decision_date", mode="before")
+    @classmethod
+    def parse_decision_date(cls, v):
+        return _to_bjt(v)
 
 
 class DecisionCreate(DecisionBase):
@@ -25,7 +43,7 @@ class DecisionUpdate(BaseModel):
     options: Optional[dict[str, Any]] = None
     reason: Optional[str] = None
     result: Optional[str] = None
-    decision_date: Optional[date] = None
+    decision_date: Optional[datetime] = None
     confidence: Optional[int] = None
     status: Optional[str] = None
 
