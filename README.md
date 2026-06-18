@@ -146,6 +146,8 @@ docker compose -f docker-compose.pull.yml exec backend alembic upgrade head
 > docker compose -f docker-compose.pull.yml pull
 > docker compose -f docker-compose.pull.yml up -d
 > ```
+>
+> 镜像托管在阿里云容器镜像服务（国内 CDN 加速），无需登录即可拉取。
 
 ### 方式二：源码构建（适合开发者）
 
