@@ -127,41 +127,36 @@
 
 ---
 
-### 方式一：预构建镜像（推荐，最快）
+### 部署方式一：预构建镜像（推荐，最快）
 
-适合**普通用户**，无需本地构建，从阿里云镜像仓库直接拉取，国内 CDN 加速。
+从阿里云镜像仓库直接拉取，国内 CDN 加速，无需本地构建。
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/CAPTURE760/CaptureOS-plus.git
 cd CaptureOS-plus
 
-# 2. 一键启动（首次拉取约 2-3 分钟）
+# 2. 启动
 docker compose -f docker-compose.pull.yml up -d
 
 # 3. 运行数据库迁移
 docker compose -f docker-compose.pull.yml exec backend alembic upgrade head
-
-# 4. 完成！访问 http://localhost:3000
 ```
 
 **后续更新：**
 
 ```bash
-# 拉取最新版本并重启（所有系统通用）
+# 拉取最新版本并重启
 docker compose -f docker-compose.pull.yml pull
 docker compose -f docker-compose.pull.yml up -d
 
-# 拉取指定版本（如 v1.1）并重启
+# 拉取指定版本（如 v1.1）
 # Linux / macOS / WSL / Git Bash：
 BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml pull
 BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml up -d
 # Windows PowerShell：
 $env:BACKEND_TAG="v1.1"; $env:FRONTEND_TAG="v1.1"; docker compose -f docker-compose.pull.yml pull
 $env:BACKEND_TAG="v1.1"; $env:FRONTEND_TAG="v1.1"; docker compose -f docker-compose.pull.yml up -d
-# Windows CMD：
-set BACKEND_TAG=v1.1&& set FRONTEND_TAG=v1.1&& docker compose -f docker-compose.pull.yml pull
-set BACKEND_TAG=v1.1&& set FRONTEND_TAG=v1.1&& docker compose -f docker-compose.pull.yml up -d
 
 # 查看所有可用版本
 # Linux / macOS / WSL：
@@ -170,8 +165,6 @@ curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/ca
 curl.exe -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
 ```
 
-**版本管理说明：**
-
 | 标签 | 含义 | 使用场景 |
 |------|------|----------|
 | `latest` | 最新版本（默认） | 日常使用，始终获取最新功能 |
@@ -179,154 +172,118 @@ curl.exe -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v
 
 ---
 
-### 方式二：源码构建（适合开发者）
+### 部署方式二：源码构建（适合开发者）
 
-适合**需要修改代码**的开发者，支持热重载，代码修改后自动生效。
+本地构建镜像，支持热重载，代码修改后自动生效。
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/CAPTURE760/CaptureOS-plus.git
 cd CaptureOS-plus
 
-# 2. 启动所有服务（首次构建约 5-10 分钟）
+# 2. 启动（首次构建约 5-10 分钟）
 docker compose up -d
 
 # 3. 运行数据库迁移
 docker compose exec backend alembic upgrade head
-
-# 4. 完成！访问 http://localhost:3000
 ```
 
 **后续更新（代码有改动时）：**
 
 ```bash
-# 拉取最新代码
 git pull
-
-# 重建镜像并重启（利用 Docker 层缓存，通常 1-2 分钟）
 docker compose up -d --build
-
-# 如果数据库有新迁移
-docker compose exec backend alembic upgrade head
+docker compose exec backend alembic upgrade head  # 有新迁移时执行
 ```
 
 **本地开发常用命令：**
 
 ```bash
-# 查看日志
-docker compose logs -f backend    # 后端日志
-docker compose logs -f frontend   # 前端日志
-
-# 重建单个服务
-docker compose up -d --build backend
-
-# 停止所有服务
-docker compose down
-
-# 停止并删除数据（危险！会清空数据库）
-docker compose down -v
+docker compose logs -f backend     # 后端日志
+docker compose logs -f frontend    # 前端日志
+docker compose up -d --build backend  # 重建单个服务
+docker compose down                # 停止所有服务
+docker compose down -v             # 停止并删除数据（危险！）
 ```
 
 ---
 
-### 方式三：Windows 一键启动（最省事）
+### 两种部署方式对比
 
-适合 **Windows 用户日常使用**，将 `start.bat` 放到桌面，双击即可：启动 Docker → 启动服务 → 打开浏览器。
+| | 预构建镜像 | 源码构建 |
+|--|-----------|---------|
+| **首次启动** | 2-3 分钟 | 5-10 分钟 |
+| **后续更新** | `pull` 秒级 | `build` 1-2 分钟 |
+| **热重载** | ❌ 改代码要重新推送 | ✅ 自动生效 |
+| **适合谁** | 普通用户 | 需要改代码的开发者 |
 
-> 注意：需修改 bat 文件中 Docker Desktop 的路径为你的实际安装路径。
+---
 
-**start.bat 内容：**
+## 🖥️ 运行方式
+
+部署完成后，根据你的系统选择启动方式：
+
+### Linux / macOS / WSL
+
+```bash
+cd ~/CaptureOS
+docker compose up -d       # 预构建镜像用：docker compose -f docker-compose.pull.yml up -d
+```
+
+### Windows 一键启动
+
+将 `start.bat` 放到桌面，双击即可自动完成：启动 Docker → 启动服务 → 打开浏览器。
+
+> 首次使用需修改 bat 文件中 Docker Desktop 路径为你的实际安装路径。
+
+**start.bat：**
 
 ```bat
 @echo off
 chcp 65001 >nul
 title CaptureOS 启动器
-
-echo ========================================
-echo   CaptureOS 个人资产管理系统
-echo ========================================
-echo.
-
-:: 检查 Docker Desktop（修改为你的实际路径）
 set DOCKER_PATH=D:\Docker\Docker Desktop.exe
 
 echo [1/4] 检查 Docker Desktop...
 tasklist /FI "IMAGENAME eq Docker Desktop.exe" 2>NUL | find /I "Docker Desktop.exe" >NUL
 if %ERRORLEVEL% NEQ 0 (
-    echo       启动 Docker Desktop...
     start "" "%DOCKER_PATH%"
     :wait_docker
     timeout /t 5 /nobreak >nul
     docker info >nul 2>&1
     if %ERRORLEVEL% NEQ 0 goto wait_docker
-    echo       Docker Desktop 已就绪
-) else (
-    echo       Docker Desktop 已在运行
 )
-echo.
 
-:: 启动服务（源码构建模式，支持热重载）
 echo [2/4] 启动 CaptureOS 服务...
 wsl -e bash -c "cd ~/CaptureOS && docker compose up -d"
-echo.
 
-:: 等待服务就绪
 echo [3/4] 等待服务就绪...
 :wait_service
 timeout /t 3 /nobreak >nul
 curl -s http://localhost:3000 >nul 2>&1
 if %ERRORLEVEL% NEQ 0 goto wait_service
-echo       服务已就绪！
-echo.
 
-:: 打开浏览器
 echo [4/4] 打开浏览器...
 start http://localhost:3000
-echo.
-
-echo ========================================
-echo   CaptureOS 已启动！
-echo   前端: http://localhost:3000
-echo   后端: http://localhost:8001/api
-echo   文档: http://localhost:8001/docs
-echo ========================================
-echo.
 pause
 ```
 
----
-
-### 方式四：手机/局域网访问
+### 手机 / 局域网访问
 
 同一局域网内的手机或其他设备可以通过电脑 IP 访问：
 
 ```bash
-# 1. 查看电脑局域网 IP
+# 查看电脑局域网 IP
 # Linux / macOS / WSL：
 ip addr | grep "inet " | grep -v 127.0.0.1
 # Windows PowerShell：
 ipconfig | findstr "IPv4"
-# 输出类似：192.168.1.100
 
-# 2. 手机浏览器访问
+# 手机浏览器访问
 http://192.168.1.100:3000
 ```
 
 > 前端会自动检测访问地址，动态请求后端 API，无需额外配置。
-
----
-
-### 方式对比
-
-| | 预构建镜像 | 源码构建 | Windows 一键启动 |
-|--|-----------|---------|-----------------|
-| **首次启动** | 2-3 分钟 | 5-10 分钟 | 3-5 分钟 |
-| **后续更新** | `pull` 秒级 | `build` 1-2 分钟 | `git pull` + 双击 bat |
-| **热重载** | ❌ 改代码要重新推送 | ✅ 自动生效 | ✅ 自动生效 |
-| **适合谁** | 普通用户 | 开发者 | Windows 日常使用 |
-| **需要操作** | 3 条命令 | 3 条命令 | 双击 bat |
-
-> **Windows 一键启动** 本质是方式二（源码构建）的便捷入口，区别只是不用手动敲命令。
 
 ### 访问地址
 
