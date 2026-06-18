@@ -75,6 +75,47 @@ export default function SolutionsPage() {
   const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Solution | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const handleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (!data) return;
+    setSelectedIds(prev => {
+      const allOnPage = data.every(item => prev.has(item.id));
+      if (allOnPage) return new Set();
+      return new Set(data.map(item => item.id));
+    });
+  };
+
+  const handleBatchDelete = async () => {
+    if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
+    for (const id of selectedIds) {
+      await fetchAPI(`/solutions/${id}`, { method: 'DELETE' });
+    }
+    setSelectedIds(new Set());
+    mutate();
+    globalMutate('/solutions/count/');
+  };
+
+  const handleBatchTag = async (tagId: number) => {
+    for (const id of selectedIds) {
+      await fetchAPI('/tags/assign', {
+        method: 'POST',
+        body: JSON.stringify({ entity_type: 'solution', entity_id: id, tag_id: tagId }),
+      });
+    }
+    setSelectedIds(new Set());
+    mutate();
+  };
+
   const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
@@ -145,6 +186,11 @@ export default function SolutionsPage() {
         }}
         onDelete={handleDelete}
         onRefresh={() => mutate()}
+        selectedIds={selectedIds}
+        onSelect={handleSelect}
+        onSelectAll={handleSelectAll}
+        onBatchDelete={handleBatchDelete}
+        onBatchTag={handleBatchTag}
       />
 
       <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />

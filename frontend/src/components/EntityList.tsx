@@ -34,6 +34,12 @@ interface EntityListProps<T> {
   onDelete?: (item: T) => void;
   onView?: (item: T) => void;
   onRefresh?: () => void;
+  // 批量操作
+  selectedIds?: Set<number>;
+  onSelect?: (id: number) => void;
+  onSelectAll?: () => void;
+  onBatchDelete?: () => void;
+  onBatchTag?: (tagId: number) => void;
 }
 
 // 小标签方块
@@ -72,13 +78,23 @@ export default function EntityList<T extends { id: number }>({
   onDelete,
   onView,
   onRefresh,
+  selectedIds,
+  onSelect,
+  onSelectAll,
+  onBatchDelete,
+  onBatchTag,
 }: EntityListProps<T>) {
   const [tagPickerItem, setTagPickerItem] = useState<T | null>(null);
+  const [showBatchTag, setShowBatchTag] = useState(false);
   const { data: allTags } = useSWR<Tag[]>('/tags/', fetchAPI);
   const { data: allEntityTags, mutate: mutateEntityTags } = useSWR<EntityTag[]>(
     `/tags/entity/${entityType}`,
     fetchAPI
   );
+
+  const hasBatchActions = !!onBatchDelete || !!onBatchTag;
+  const selectedCount = selectedIds?.size || 0;
+  const allSelected = data.length > 0 && data.every(item => selectedIds?.has(item.id));
 
   // 获取某个实体的标签
   const getEntityTags = (entityId: number): Tag[] => {
@@ -90,114 +106,192 @@ export default function EntityList<T extends { id: number }>({
   };
 
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <table className="min-w-full">
-        <thead className="bg-gray-50 border-b">
-          <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className="px-4 py-3 text-left text-sm font-medium text-gray-700"
-                style={col.width ? { width: col.width } : undefined}
-              >
-                {col.label}
+    <div>
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              {hasBatchActions && (
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={onSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+              )}
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className="px-4 py-3 text-left text-sm font-medium text-gray-700"
+                  style={col.width ? { width: col.width } : undefined}
+                >
+                  {col.label}
+                </th>
+              ))}
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-32">
+                标签
               </th>
-            ))}
-            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-32">
-              标签
-            </th>
-            {(onEdit || onDelete || onView) && (
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-24">
-                操作
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {data.map((item) => {
-            const itemTags = getEntityTags(item.id);
-            return (
-              <tr key={item.id}
-                className={`transition-colors ${onView ? 'hover:bg-blue-50 cursor-pointer' : 'hover:bg-gray-50'}`}
-                onClick={() => onView?.(item)}
-              >
-                {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-sm text-gray-700 max-w-xs">
-                    {col.render ? (
-                      col.render(item)
-                    ) : (
-                      <span className="line-clamp-2" title={String((item as Record<string, unknown>)[col.key] ?? '')}>
-                        {String((item as Record<string, unknown>)[col.key] ?? '-')}
-                      </span>
-                    )}
-                  </td>
-                ))}
-                {/* 标签列 */}
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1">
-                    <div className="flex flex-wrap gap-1 min-w-0 flex-1">
-                      {itemTags.map((tag) => (
-                        <TagBadge key={tag.id} tag={tag} />
-                      ))}
+              {(onEdit || onDelete || onView) && (
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-24">
+                  操作
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {data.map((item) => {
+              const itemTags = getEntityTags(item.id);
+              return (
+                <tr key={item.id}
+                  className={`transition-colors ${
+                    selectedIds?.has(item.id) ? 'bg-blue-50' :
+                    onView ? 'hover:bg-blue-50 cursor-pointer' : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => onView?.(item)}
+                >
+                  {hasBatchActions && (
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds?.has(item.id) || false}
+                        onChange={() => onSelect?.(item.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                  )}
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-4 py-3 text-sm text-gray-700 max-w-xs">
+                      {col.render ? (
+                        col.render(item)
+                      ) : (
+                        <span className="line-clamp-2" title={String((item as Record<string, unknown>)[col.key] ?? '')}>
+                          {String((item as Record<string, unknown>)[col.key] ?? '-')}
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                  {/* 标签列 */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap gap-1 min-w-0 flex-1">
+                        {itemTags.map((tag) => (
+                          <TagBadge key={tag.id} tag={tag} />
+                        ))}
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setTagPickerItem(item); }}
+                        className="text-gray-400 hover:text-blue-500 text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 hover:border-blue-500 shrink-0"
+                        title="打标签"
+                      >
+                        +
+                      </button>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setTagPickerItem(item); }}
-                      className="text-gray-400 hover:text-blue-500 text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 hover:border-blue-500 shrink-0"
-                      title="打标签"
-                    >
-                      +
-                    </button>
+                  </td>
+                  {/* 操作列 */}
+                  {(onEdit || onDelete || onView) && (
+                    <td className="px-4 py-3 text-sm space-x-2 whitespace-nowrap">
+                      {onView && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onView(item); }}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          查看
+                        </button>
+                      )}
+                      {onEdit && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          编辑
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDelete(item); }}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          删除
+                        </button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+            {data.length === 0 && (
+              <tr>
+                <td
+                  colSpan={columns.length + (hasBatchActions ? 3 : 2)}
+                  className="px-4 py-12 text-center text-gray-500"
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="text-4xl mb-2">📭</span>
+                    <span>暂无数据</span>
                   </div>
                 </td>
-                {/* 操作列 */}
-                {(onEdit || onDelete || onView) && (
-                  <td className="px-4 py-3 text-sm space-x-2 whitespace-nowrap">
-                    {onView && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onView(item); }}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        查看
-                      </button>
-                    )}
-                    {onEdit && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        编辑
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        删除
-                      </button>
-                    )}
-                  </td>
-                )}
               </tr>
-            );
-          })}
-          {data.length === 0 && (
-            <tr>
-              <td
-                colSpan={columns.length + 2}
-                className="px-4 py-12 text-center text-gray-500"
-              >
-                <div className="flex flex-col items-center">
-                  <span className="text-4xl mb-2">📭</span>
-                  <span>暂无数据</span>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      {/* 标签选择器弹窗 */}
+      {/* 批量操作栏 */}
+      {hasBatchActions && selectedCount > 0 && (
+        <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center gap-4">
+          <span className="text-sm text-blue-700 font-medium">已选 {selectedCount} 条</span>
+          <div className="flex items-center gap-2">
+            {onBatchDelete && (
+              <button
+                onClick={onBatchDelete}
+                className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700"
+              >
+                🗑️ 批量删除
+              </button>
+            )}
+            {onBatchTag && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowBatchTag(!showBatchTag)}
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                >
+                  🏷️ 批量打标签
+                </button>
+                {showBatchTag && allTags && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg z-10 w-56 max-h-60 overflow-y-auto">
+                    {allTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        onClick={() => {
+                          onBatchTag(tag.id);
+                          setShowBatchTag(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <div
+                          className="w-3 h-3 rounded-sm"
+                          style={{ backgroundColor: tag.color || '#6B7280' }}
+                        />
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => onSelect?.(-1)}
+            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          >
+            取消选择
+          </button>
+        </div>
+      )}
+
+      {/* 标签选择器弹窗（单条） */}
       {tagPickerItem && (
         <TagPicker
           entityType={entityType}
