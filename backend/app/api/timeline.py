@@ -102,7 +102,7 @@ async def get_timeline(
                 "entity_id": item.id,
                 "title": item.title,
                 "date": d.isoformat() if d else None,
-                "datetime": _get_datetime(item, date_field_name),
+                "datetime": _get_datetime(item, "created_at"),
             }
             # 附加额外字段
             if hasattr(item, "status"):
@@ -140,7 +140,7 @@ async def get_timeline_chains(
                 "entity_id": item.id,
                 "title": item.title,
                 "date": d.isoformat() if d else None,
-                "datetime": _get_datetime(item, date_field_name),
+                "datetime": _get_datetime(item, "created_at"),
             }
 
     # 2. 查链路关系，用 Union-Find 分组
