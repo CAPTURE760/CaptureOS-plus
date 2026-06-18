@@ -159,10 +159,7 @@ $env:BACKEND_TAG="v1.1"; $env:FRONTEND_TAG="v1.1"; docker compose -f docker-comp
 $env:BACKEND_TAG="v1.1"; $env:FRONTEND_TAG="v1.1"; docker compose -f docker-compose.pull.yml up -d
 
 # 查看所有可用版本
-# Linux / macOS / WSL：
-curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
-# Windows PowerShell：
-curl.exe -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
+cat VERSIONS.md  # 或在 GitHub 仓库首页查看 VERSIONS.md 文件
 ```
 
 | 标签 | 含义 | 使用场景 |
@@ -540,24 +537,16 @@ docker compose logs db     # 查看数据库日志
 
 ### 5. 如何回滚到旧版本
 
-```bash
-# 查看所有可用版本
-# Linux / macOS / WSL：
-curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
-# Windows PowerShell：
-curl.exe -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
+查看 `VERSIONS.md` 文件获取所有可用版本，然后指定版本拉取：
 
-# 回滚到指定版本（Linux / macOS / WSL / Git Bash）
+```bash
+# Linux / macOS / WSL / Git Bash
 BACKEND_TAG=v1.0 FRONTEND_TAG=v1.0 docker compose -f docker-compose.pull.yml pull
 BACKEND_TAG=v1.0 FRONTEND_TAG=v1.0 docker compose -f docker-compose.pull.yml up -d
 
-# 回滚到指定版本（Windows PowerShell）
+# Windows PowerShell
 $env:BACKEND_TAG="v1.0"; $env:FRONTEND_TAG="v1.0"; docker compose -f docker-compose.pull.yml pull
 $env:BACKEND_TAG="v1.0"; $env:FRONTEND_TAG="v1.0"; docker compose -f docker-compose.pull.yml up -d
-
-# 回滚到指定版本（Windows CMD）
-set BACKEND_TAG=v1.0&& set FRONTEND_TAG=v1.0&& docker compose -f docker-compose.pull.yml pull
-set BACKEND_TAG=v1.0&& set FRONTEND_TAG=v1.0&& docker compose -f docker-compose.pull.yml up -d
 ```
 
 ---
