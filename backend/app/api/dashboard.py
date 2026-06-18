@@ -18,6 +18,25 @@ from app.models.solution import Solution
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
+@router.get("/counts")
+async def get_counts(db: AsyncSession = Depends(get_db)):
+    """轻量端点：只返回侧边栏角标需要的 3 个数字。"""
+    issues = await db.execute(
+        select(func.count(Issue.id)).where(Issue.status.in_(["open", "in_progress"]))
+    )
+    decisions = await db.execute(
+        select(func.count(Decision.id)).where(Decision.status == "pending")
+    )
+    knowledge = await db.execute(
+        select(func.count(Knowledge.id)).where(Knowledge.status == "unverified")
+    )
+    return {
+        "issues": issues.scalar() or 0,
+        "decisions": decisions.scalar() or 0,
+        "knowledge": knowledge.scalar() or 0,
+    }
+
+
 @router.get("/")
 async def get_dashboard(db: AsyncSession = Depends(get_db)):
     now = datetime.now(timezone.utc)

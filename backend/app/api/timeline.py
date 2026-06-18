@@ -80,6 +80,7 @@ async def get_timeline(
     start_date: date | None = None,
     end_date: date | None = None,
     entity_type: str | None = None,
+    limit: int = 200,
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
     events = []
@@ -88,7 +89,7 @@ async def get_timeline(
         if entity_type and etype != entity_type:
             continue
 
-        query = select(model)
+        query = select(model).order_by(model.created_at.desc()).limit(limit)
         result = await db.execute(query)
         for item in result.scalars().all():
             d = _get_date(item, date_field_name)
@@ -121,13 +122,14 @@ async def get_timeline(
 async def get_timeline_chains(
     start_date: date | None = None,
     end_date: date | None = None,
+    limit: int = 200,
     db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
-    """链路聚合时间线。"""
-    # 1. 收集所有实体
+    """链路聚合时间线。最多加载 limit 条记录。"""
+    # 1. 收集实体（按创建时间倒序，只取最近 limit 条）
     all_entities: dict[str, dict] = {}
     for model, date_field_name, etype in ENTITY_CONFIGS:
-        query = select(model)
+        query = select(model).order_by(model.created_at.desc()).limit(limit)
         result = await db.execute(query)
         for item in result.scalars().all():
             d = _get_date(item, date_field_name)

@@ -154,6 +154,7 @@ export default function KnowledgePage() {
     mutate();
     globalMutate('/knowledges/count/');
     globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
   };
 
   const handleDelete = async (item: Knowledge) => {
@@ -162,6 +163,7 @@ export default function KnowledgePage() {
       mutate();
       globalMutate('/knowledges/count/');
       globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
     }
   };
 

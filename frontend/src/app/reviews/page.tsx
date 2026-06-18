@@ -146,6 +146,7 @@ export default function ReviewsPage() {
     mutate();
     globalMutate('/reviews/count/');
     globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
   };
 
   const handleDelete = async (item: Review) => {
@@ -154,6 +155,7 @@ export default function ReviewsPage() {
       mutate();
       globalMutate('/reviews/count/');
       globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
     }
   };
 

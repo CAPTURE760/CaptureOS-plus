@@ -7,14 +7,10 @@ import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import BeijingTime from './BeijingTime';
 
-interface DashboardPending {
-  issues: Array<{ id: number }>;
-  decisions: Array<{ id: number }>;
-  knowledge: Array<{ id: number }>;
-}
-
-interface DashboardData {
-  pending: DashboardPending;
+interface CountsData {
+  issues: number;
+  decisions: number;
+  knowledge: number;
 }
 
 const menuItems = [
@@ -34,15 +30,15 @@ const menuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const { data: dashData } = useSWR<DashboardData>('/dashboard/', fetchAPI, {
-    refreshInterval: 60000, // 每分钟刷新
+  const { data: counts } = useSWR<CountsData>('/dashboard/counts', fetchAPI, {
+    refreshInterval: 60000,
   });
 
   const badges: Record<string, number> = {};
-  if (dashData?.pending) {
-    badges.issues = dashData.pending.issues.length;
-    badges.decisions = dashData.pending.decisions.length;
-    badges.knowledge = dashData.pending.knowledge.length;
+  if (counts) {
+    badges.issues = counts.issues;
+    badges.decisions = counts.decisions;
+    badges.knowledge = counts.knowledge;
   }
 
   // 路由变化时自动收起移动端侧边栏

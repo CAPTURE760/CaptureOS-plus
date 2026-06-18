@@ -191,6 +191,7 @@ export default function ProjectsPage() {
     mutate();
     globalMutate('/projects/count/');
     globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
   };
 
   const handleDelete = async (item: Project) => {
@@ -199,6 +200,7 @@ export default function ProjectsPage() {
       mutate();
       globalMutate('/projects/count/');
       globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
     }
   };
 

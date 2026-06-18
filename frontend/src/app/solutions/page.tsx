@@ -135,6 +135,7 @@ export default function SolutionsPage() {
     mutate();
     globalMutate('/solutions/count/');
     globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
   };
 
   const handleDelete = async (item: Solution) => {
@@ -143,6 +144,7 @@ export default function SolutionsPage() {
       mutate();
       globalMutate('/solutions/count/');
       globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
     }
   };
 

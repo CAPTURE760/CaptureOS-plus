@@ -166,6 +166,7 @@ export default function DecisionsPage() {
     mutate();
     globalMutate('/decisions/count/');
     globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
   };
 
   const handleDelete = async (item: Decision) => {
@@ -174,6 +175,7 @@ export default function DecisionsPage() {
       mutate();
       globalMutate('/decisions/count/');
       globalMutate('/dashboard/');
+    globalMutate('/dashboard/counts');
     }
   };
 
