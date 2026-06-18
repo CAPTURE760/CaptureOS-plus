@@ -84,7 +84,8 @@ const FIELD_LABELS: Record<string, string> = {
   effectiveness: '有效性', summary: '摘要', lesson: '经验教训',
   content: '内容', category: '分类', source: '来源', confidence: '置信度',
   background: '背景', reason: '原因', event_summary: '事件总结',
-  rating: '评分', deploy_url: '部署地址', run_command: '运行方式',
+  result: '结果', context: '上下文', period: '复盘周期',
+  rating: '评分', run_command: '运行方式',
   tech_stack: '技术栈', source_url: '源文件地址', github_url: 'GitHub 地址',
   tool: '使用工具',
 };
