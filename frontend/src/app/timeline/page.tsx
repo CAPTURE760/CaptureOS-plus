@@ -240,7 +240,6 @@ function ChainItem({ item, router }: { item: ChainEvent; router: ReturnType<type
                     ? new Date(e.datetime).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
                     : '-'}
                 </span>
-                {i < item.entities!.length - 1 && <span className="text-gray-400">→</span>}
               </div>
             ))}
           </div>
