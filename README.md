@@ -148,16 +148,26 @@ docker compose -f docker-compose.pull.yml exec backend alembic upgrade head
 **后续更新：**
 
 ```bash
-# 拉取最新版本并重启
+# 拉取最新版本并重启（所有系统通用）
 docker compose -f docker-compose.pull.yml pull
 docker compose -f docker-compose.pull.yml up -d
 
 # 拉取指定版本（如 v1.1）并重启
+# Linux / macOS / WSL / Git Bash：
 BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml pull
 BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml up -d
+# Windows PowerShell：
+$env:BACKEND_TAG="v1.1"; $env:FRONTEND_TAG="v1.1"; docker compose -f docker-compose.pull.yml pull
+$env:BACKEND_TAG="v1.1"; $env:FRONTEND_TAG="v1.1"; docker compose -f docker-compose.pull.yml up -d
+# Windows CMD：
+set BACKEND_TAG=v1.1&& set FRONTEND_TAG=v1.1&& docker compose -f docker-compose.pull.yml pull
+set BACKEND_TAG=v1.1&& set FRONTEND_TAG=v1.1&& docker compose -f docker-compose.pull.yml up -d
 
 # 查看所有可用版本
+# Linux / macOS / WSL：
 curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
+# Windows PowerShell：
+curl.exe -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
 ```
 
 **版本管理说明：**
@@ -288,8 +298,11 @@ pause
 
 ```bash
 # 1. 查看电脑局域网 IP
+# Linux / macOS / WSL：
 ip addr | grep "inet " | grep -v 127.0.0.1
-# 输出类似：inet 192.168.1.100/24
+# Windows PowerShell：
+ipconfig | findstr "IPv4"
+# 输出类似：192.168.1.100
 
 # 2. 手机浏览器访问
 http://192.168.1.100:3000
@@ -566,11 +579,22 @@ docker compose logs db     # 查看数据库日志
 
 ```bash
 # 查看所有可用版本
+# Linux / macOS / WSL：
 curl -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
+# Windows PowerShell：
+curl.exe -s https://crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/v2/captureos/captureos-backend/tags/list
 
-# 回滚到指定版本
+# 回滚到指定版本（Linux / macOS / WSL / Git Bash）
 BACKEND_TAG=v1.0 FRONTEND_TAG=v1.0 docker compose -f docker-compose.pull.yml pull
 BACKEND_TAG=v1.0 FRONTEND_TAG=v1.0 docker compose -f docker-compose.pull.yml up -d
+
+# 回滚到指定版本（Windows PowerShell）
+$env:BACKEND_TAG="v1.0"; $env:FRONTEND_TAG="v1.0"; docker compose -f docker-compose.pull.yml pull
+$env:BACKEND_TAG="v1.0"; $env:FRONTEND_TAG="v1.0"; docker compose -f docker-compose.pull.yml up -d
+
+# 回滚到指定版本（Windows CMD）
+set BACKEND_TAG=v1.0&& set FRONTEND_TAG=v1.0&& docker compose -f docker-compose.pull.yml pull
+set BACKEND_TAG=v1.0&& set FRONTEND_TAG=v1.0&& docker compose -f docker-compose.pull.yml up -d
 ```
 
 ---
