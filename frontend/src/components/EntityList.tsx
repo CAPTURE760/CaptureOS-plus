@@ -117,7 +117,10 @@ export default function EntityList<T extends { id: number }>({
           {data.map((item) => {
             const itemTags = getEntityTags(item.id);
             return (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={item.id}
+                className={`transition-colors ${onView ? 'hover:bg-blue-50 cursor-pointer' : 'hover:bg-gray-50'}`}
+                onClick={() => onView?.(item)}
+              >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-sm text-gray-700 max-w-xs">
                     {col.render ? (
