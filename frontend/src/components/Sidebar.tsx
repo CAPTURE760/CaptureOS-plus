@@ -3,16 +3,28 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import useSWR from 'swr';
+import { fetchAPI } from '@/lib/api';
 import BeijingTime from './BeijingTime';
+
+interface DashboardPending {
+  issues: Array<{ id: number }>;
+  decisions: Array<{ id: number }>;
+  knowledge: Array<{ id: number }>;
+}
+
+interface DashboardData {
+  pending: DashboardPending;
+}
 
 const menuItems = [
   { href: '/', label: '仪表盘', icon: '📊' },
   { href: '/projects', label: '项目', icon: '📁' },
   { href: '/experiences', label: '经验', icon: '💡' },
-  { href: '/issues', label: '问题', icon: '⚠️' },
+  { href: '/issues', label: '问题', icon: '⚠️', badge: 'issues' as const },
   { href: '/solutions', label: '解决方案', icon: '🔧' },
-  { href: '/knowledge', label: '知识', icon: '📚' },
-  { href: '/decisions', label: '决策', icon: '🎯' },
+  { href: '/knowledge', label: '知识', icon: '📚', badge: 'knowledge' as const },
+  { href: '/decisions', label: '决策', icon: '🎯', badge: 'decisions' as const },
   { href: '/reviews', label: '复盘', icon: '📝' },
   { href: '/tags', label: '标签', icon: '🏷️' },
   { href: '/timeline', label: '时间线', icon: '📅' },
@@ -22,6 +34,16 @@ const menuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: dashData } = useSWR<DashboardData>('/dashboard/', fetchAPI, {
+    refreshInterval: 60000, // 每分钟刷新
+  });
+
+  const badges: Record<string, number> = {};
+  if (dashData?.pending) {
+    badges.issues = dashData.pending.issues.length;
+    badges.decisions = dashData.pending.decisions.length;
+    badges.knowledge = dashData.pending.knowledge.length;
+  }
 
   // 路由变化时自动收起移动端侧边栏
   useEffect(() => {
@@ -67,24 +89,32 @@ export default function Sidebar() {
         <BeijingTime />
 
         <nav className="flex-1 p-4 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
-                item.href === '/'
-                  ? pathname === '/'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800'
-                  : pathname === item.href || pathname.startsWith(item.href + '/')
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const count = item.badge ? badges[item.badge] || 0 : 0;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
+                  item.href === '/'
+                    ? pathname === '/'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-gray-800'
+                    : pathname === item.href || pathname.startsWith(item.href + '/')
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                <span>{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                {count > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {count}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </aside>
     </>

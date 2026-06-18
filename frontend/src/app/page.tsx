@@ -120,6 +120,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* 提醒横幅 */}
+      {totalPending > 0 && (
+        <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center gap-3">
+          <span className="text-2xl">🔔</span>
+          <div className="flex-1">
+            <span className="text-sm font-medium text-amber-800">
+              你有 {totalPending} 条待处理事项：
+            </span>
+            <span className="text-sm text-amber-700 ml-1">
+              {pending.issues.length > 0 && `${pending.issues.length} 个问题`}
+              {pending.issues.length > 0 && pending.decisions.length > 0 && '、'}
+              {pending.decisions.length > 0 && `${pending.decisions.length} 个决策`}
+              {(pending.issues.length > 0 || pending.decisions.length > 0) && pending.knowledge.length > 0 && '、'}
+              {pending.knowledge.length > 0 && `${pending.knowledge.length} 条知识`}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 待处理 */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">

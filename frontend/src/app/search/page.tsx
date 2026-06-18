@@ -42,6 +42,24 @@ const entityRoutes: Record<string, string> = {
   solution: '/solutions', knowledge: '/knowledge', decision: '/decisions', review: '/reviews',
 };
 
+// 关键词高亮组件
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim() || !text) return <>{text}</>;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-yellow-200 px-0.5 rounded">{part}</mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -131,7 +149,7 @@ export default function SearchPage() {
             // 已筛选类型：平铺展示
             <div className="space-y-2">
               {data.results.map((result) => (
-                <SearchResultItem key={`${result.entity_type}-${result.entity_id}`} result={result} />
+                <SearchResultItem key={`${result.entity_type}-${result.entity_id}`} result={result} query={data.query} />
               ))}
             </div>
           ) : (
@@ -147,7 +165,7 @@ export default function SearchPage() {
                   </h3>
                   <div className="space-y-2">
                     {items.map((result) => (
-                      <SearchResultItem key={`${result.entity_type}-${result.entity_id}`} result={result} />
+                      <SearchResultItem key={`${result.entity_type}-${result.entity_id}`} result={result} query={data.query} />
                     ))}
                   </div>
                 </div>
@@ -160,7 +178,7 @@ export default function SearchPage() {
   );
 }
 
-function SearchResultItem({ result }: { result: SearchResult }) {
+function SearchResultItem({ result, query }: { result: SearchResult; query: string }) {
   const router = useRouter();
   return (
     <div
@@ -172,9 +190,9 @@ function SearchResultItem({ result }: { result: SearchResult }) {
           {entityLabels[result.entity_type]}
         </span>
       </div>
-      <h3 className="font-medium mb-1">{result.title}</h3>
+      <h3 className="font-medium mb-1"><HighlightText text={result.title} query={query} /></h3>
       {result.snippet && (
-        <p className="text-gray-600 text-sm">{result.snippet}</p>
+        <p className="text-gray-600 text-sm"><HighlightText text={result.snippet} query={query} /></p>
       )}
     </div>
   );
