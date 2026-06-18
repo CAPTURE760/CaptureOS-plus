@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 
@@ -34,7 +35,13 @@ const entityColors: Record<string, string> = {
   knowledge: 'bg-purple-500', decision: 'bg-indigo-500', review: 'bg-pink-500',
 };
 
+const entityRoutes: Record<string, string> = {
+  project: '/projects', experience: '/experiences', issue: '/issues',
+  solution: '/solutions', knowledge: '/knowledge', decision: '/decisions', review: '/reviews',
+};
+
 export default function TimelinePage() {
+  const router = useRouter();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [entityType, setEntityType] = useState('');
@@ -143,10 +150,10 @@ export default function TimelinePage() {
           <div className="space-y-4">
             {viewMode === 'chains'
               ? (filteredData as ChainEvent[]).map((item, idx) => (
-                  <ChainItem key={idx} item={item} />
+                  <ChainItem key={idx} item={item} router={router} />
                 ))
               : (filteredData as TimelineEvent[]).map((event, idx) => (
-                  <FlatItem key={`${event.entity_type}-${event.entity_id}-${idx}`} event={event} />
+                  <FlatItem key={`${event.entity_type}-${event.entity_id}-${idx}`} event={event} router={router} />
                 ))
             }
           </div>
@@ -156,11 +163,14 @@ export default function TimelinePage() {
   );
 }
 
-function FlatItem({ event }: { event: TimelineEvent }) {
+function FlatItem({ event, router }: { event: TimelineEvent; router: ReturnType<typeof useRouter> }) {
   return (
     <div className="flex items-start gap-4">
       <div className={`w-4 h-4 rounded-full ${entityColors[event.entity_type]} mt-1.5 z-10`} />
-      <div className="bg-white p-4 rounded-lg shadow flex-1">
+      <div
+        onClick={() => router.push(`${entityRoutes[event.entity_type]}/${event.entity_id}`)}
+        className="bg-white p-4 rounded-lg shadow flex-1 cursor-pointer hover:shadow-md transition-shadow"
+      >
         <div className="flex items-center gap-2 mb-1">
           <span className={`px-2 py-0.5 rounded text-xs text-white ${entityColors[event.entity_type]}`}>
             {entityLabels[event.entity_type]}
@@ -177,11 +187,11 @@ function FlatItem({ event }: { event: TimelineEvent }) {
   );
 }
 
-function ChainItem({ item }: { item: ChainEvent }) {
+function ChainItem({ item, router }: { item: ChainEvent; router: ReturnType<typeof useRouter> }) {
   const [expanded, setExpanded] = useState(false);
 
   if (item.type === 'single' && item.entity) {
-    return <FlatItem event={item.entity} />;
+    return <FlatItem event={item.entity} router={router} />;
   }
 
   // 链路
@@ -207,7 +217,10 @@ function ChainItem({ item }: { item: ChainEvent }) {
         {expanded && item.entities && (
           <div className="mt-3 pt-3 border-t space-y-2">
             {item.entities.map((e, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
+              <div key={i}
+                onClick={(ev) => { ev.stopPropagation(); router.push(`${entityRoutes[e.entity_type]}/${e.entity_id}`); }}
+                className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
+              >
                 <span className={`w-2 h-2 rounded-full ${entityColors[e.entity_type]}`} />
                 <span className={`px-1.5 py-0.5 rounded text-xs text-white ${entityColors[e.entity_type]}`}>
                   {entityLabels[e.entity_type]}
