@@ -139,7 +139,7 @@ export default function EntityList<T extends { id: number }>({
                       <TagBadge key={tag.id} tag={tag} />
                     ))}
                     <button
-                      onClick={() => setTagPickerItem(item)}
+                      onClick={(e) => { e.stopPropagation(); setTagPickerItem(item); }}
                       className="text-gray-400 hover:text-blue-500 text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 hover:border-blue-500"
                       title="打标签"
                     >
@@ -152,7 +152,7 @@ export default function EntityList<T extends { id: number }>({
                   <td className="px-4 py-3 text-sm space-x-2 whitespace-nowrap">
                     {onView && (
                       <button
-                        onClick={() => onView(item)}
+                        onClick={(e) => { e.stopPropagation(); onView(item); }}
                         className="text-green-600 hover:text-green-800"
                       >
                         查看
@@ -160,7 +160,7 @@ export default function EntityList<T extends { id: number }>({
                     )}
                     {onEdit && (
                       <button
-                        onClick={() => onEdit(item)}
+                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         编辑
@@ -168,7 +168,7 @@ export default function EntityList<T extends { id: number }>({
                     )}
                     {onDelete && (
                       <button
-                        onClick={() => onDelete(item)}
+                        onClick={(e) => { e.stopPropagation(); onDelete(item); }}
                         className="text-red-600 hover:text-red-800"
                       >
                         删除
