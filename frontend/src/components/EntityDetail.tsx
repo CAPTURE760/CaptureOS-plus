@@ -76,6 +76,19 @@ const ENTITY_COLORS: Record<string, string> = {
   review: 'border-pink-500',
 };
 
+// 字段名中文映射
+const FIELD_LABELS: Record<string, string> = {
+  description: '描述', status: '状态', start_date: '开始日期', end_date: '结束日期',
+  priority: '优先级', root_cause: '根本原因', discovered_date: '发现日期',
+  resolved_date: '解决日期', approach: '方案', outcome: '结果',
+  effectiveness: '有效性', summary: '摘要', lesson: '经验教训',
+  content: '内容', category: '分类', source: '来源', confidence: '置信度',
+  background: '背景', reason: '原因', event_summary: '事件总结',
+  rating: '评分', deploy_url: '部署地址', run_command: '运行方式',
+  tech_stack: '技术栈', source_url: '源文件地址', github_url: 'GitHub 地址',
+  tool: '使用工具',
+};
+
 const TAG_COLORS: Record<string, string> = {
   project: 'bg-blue-100 text-blue-800', experience: 'bg-yellow-100 text-yellow-800',
   issue: 'bg-red-100 text-red-800', solution: 'bg-green-100 text-green-800',
@@ -216,7 +229,7 @@ export default function EntityDetail({
             return (
               <div key={key}>
                 <span className="text-sm text-gray-500 block">
-                  {key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {FIELD_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                 </span>
                 <div className="text-sm">{renderField(key, value)}</div>
               </div>
