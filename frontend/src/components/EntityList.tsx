@@ -134,13 +134,15 @@ export default function EntityList<T extends { id: number }>({
                 ))}
                 {/* 标签列 */}
                 <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1 items-center">
-                    {itemTags.map((tag) => (
-                      <TagBadge key={tag.id} tag={tag} />
-                    ))}
+                  <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap gap-1 min-w-0 flex-1">
+                      {itemTags.map((tag) => (
+                        <TagBadge key={tag.id} tag={tag} />
+                      ))}
+                    </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setTagPickerItem(item); }}
-                      className="text-gray-400 hover:text-blue-500 text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 hover:border-blue-500"
+                      className="text-gray-400 hover:text-blue-500 text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5 hover:border-blue-500 shrink-0"
                       title="打标签"
                     >
                       +
