@@ -125,7 +125,29 @@
 - **Docker** 20.10+
 - **Docker Compose** v2.0+
 
-### 一键部署
+### 方式一：预构建镜像（推荐，最快）
+
+```bash
+# 1. 克隆项目（仅下载配置文件，不构建）
+git clone https://github.com/CAPTURE760/CaptureOS-plus.git
+cd CaptureOS-plus
+
+# 2. 使用预构建镜像启动（首次拉取约 2-3 分钟）
+docker compose -f docker-compose.pull.yml up -d
+
+# 3. 运行数据库迁移
+docker compose -f docker-compose.pull.yml exec backend alembic upgrade head
+
+# 4. 完成！访问应用
+```
+
+> 后续更新只需重新拉取镜像：
+> ```bash
+> docker compose -f docker-compose.pull.yml pull
+> docker compose -f docker-compose.pull.yml up -d
+> ```
+
+### 方式二：源码构建（适合开发者）
 
 ```bash
 # 1. 克隆项目
@@ -293,7 +315,7 @@ CaptureOS-plus/
 ### 本地开发
 
 ```bash
-# 启动服务（支持热重载）
+# 启动服务（支持热重载，源码构建）
 docker compose up -d
 
 # 查看日志
@@ -305,6 +327,9 @@ docker compose down
 
 # 重建镜像（代码修改后）
 docker compose up -d --build
+
+# 使用预构建镜像开发（跳过构建，快速启动）
+docker compose -f docker-compose.pull.yml up -d
 ```
 
 ### 数据库操作
@@ -356,7 +381,12 @@ services:
 
 ### 2. 构建速度慢
 
-使用国内镜像源（已在 Dockerfile 中配置）：
+**推荐方案**：使用预构建镜像，无需本地构建：
+```bash
+docker compose -f docker-compose.pull.yml up -d
+```
+
+**备选方案**：使用国内镜像源（已在 Dockerfile 中配置）：
 - 后端：阿里云 Debian 镜像
 - 前端：淘宝 npm 镜像
 
