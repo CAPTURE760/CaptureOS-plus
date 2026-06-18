@@ -88,7 +88,7 @@ export default function RelationPicker({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-[500px] max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 md:mx-0 max-h-[80vh] overflow-hidden">
         <div className="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
           <h3 className="font-semibold">
             🔗 关联{ENTITY_LABELS[targetType] || targetType}

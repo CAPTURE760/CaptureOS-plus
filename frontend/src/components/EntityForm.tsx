@@ -71,7 +71,7 @@ export default function EntityForm({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg md:max-w-2xl mx-4 md:mx-0 max-h-[90vh] overflow-hidden flex flex-col">
         {/* 标题栏 */}
         <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
           <h3 className="text-lg font-semibold">{title || '新建'}</h3>

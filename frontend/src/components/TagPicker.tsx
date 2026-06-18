@@ -110,7 +110,7 @@ export default function TagPicker({ entityType, entityId, onClose, onUpdated }: 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-96 max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 md:mx-0 max-h-[80vh] overflow-hidden">
         {/* 头部 */}
         <div className="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
           <h3 className="font-semibold">🏷️ 管理标签</h3>

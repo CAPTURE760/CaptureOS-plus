@@ -107,7 +107,8 @@ export default function EntityList<T extends { id: number }>({
 
   return (
     <div>
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
+      {/* 电脑端表格 */}
+      <div className="hidden md:block overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
@@ -236,6 +237,84 @@ export default function EntityList<T extends { id: number }>({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* 手机端卡片列表 */}
+      <div className="md:hidden space-y-3">
+        {hasBatchActions && (
+          <div className="flex items-center gap-2 px-1">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={onSelectAll}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-500">全选</span>
+          </div>
+        )}
+        {data.map((item) => {
+          const itemTags = getEntityTags(item.id);
+          return (
+            <div
+              key={item.id}
+              className={`bg-white rounded-lg shadow p-4 ${
+                selectedIds?.has(item.id) ? 'ring-2 ring-blue-500' : ''
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                {hasBatchActions && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds?.has(item.id) || false}
+                    onChange={() => onSelect?.(item.id)}
+                    className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                )}
+                <div className="flex-1 min-w-0" onClick={() => onView?.(item)}>
+                  <div className="font-medium text-gray-900 truncate">
+                    {(item as Record<string, unknown>)[columns[0]?.key] ?? '-'}
+                  </div>
+                  {columns.slice(1, 3).map((col) => (
+                    <div key={col.key} className="text-sm text-gray-500 mt-1 truncate">
+                      <span className="text-gray-400">{col.label}：</span>
+                      {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                <div className="flex flex-wrap gap-1">
+                  {itemTags.map((tag) => (
+                    <TagBadge key={tag.id} tag={tag} />
+                  ))}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setTagPickerItem(item); }}
+                    className="text-gray-400 hover:text-blue-500 text-xs border border-dashed border-gray-300 rounded px-1.5 py-0.5"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-sm shrink-0 ml-2">
+                  {onView && (
+                    <button onClick={(e) => { e.stopPropagation(); onView(item); }} className="text-green-600">查看</button>
+                  )}
+                  {onEdit && (
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="text-blue-600">编辑</button>
+                  )}
+                  {onDelete && (
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="text-red-600">删除</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {data.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            <span className="text-4xl mb-2 block">📭</span>
+            <span>暂无数据</span>
+          </div>
+        )}
       </div>
 
       {/* 批量操作栏 */}
