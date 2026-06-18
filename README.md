@@ -270,17 +270,21 @@ pause
 同一局域网内的手机或其他设备可以通过电脑 IP 访问：
 
 ```bash
-# 查看电脑局域网 IP
+# 1. 先查看电脑的局域网 IP
 # Linux / macOS / WSL：
 ip addr | grep "inet " | grep -v 127.0.0.1
+# 输出类似：inet 192.168.1.100/24  ← 这就是你的 IP
+
 # Windows PowerShell：
 ipconfig | findstr "IPv4"
+# 输出类似：IPv4 地址 . . . . . . . . . . : 192.168.1.100
 
-# 手机浏览器访问
-http://192.168.1.100:3000
+# 2. 手机浏览器访问（把 IP 换成你电脑的实际 IP）
+http://192.168.x.x:3000
 ```
 
 > 前端会自动检测访问地址，动态请求后端 API，无需额外配置。
+> 注意：手机和电脑必须连接同一个 WiFi/局域网。
 
 ### 访问地址
 
@@ -746,6 +750,27 @@ $env:BACKEND_TAG="v1.0"; $env:FRONTEND_TAG="v1.0"; docker compose -f docker-comp
 **为什么：** 数据增多后页面切换卡顿，BeijingTime 每秒重渲染是主要瓶颈，批量操作串行太慢。
 
 **效果：** 页面切换流畅，批量操作秒级完成，侧边栏加载从 7+ 查询降到 3 个 COUNT。
+
+---
+
+### 第十四阶段：Docker 预构建镜像 + 部署优化 + UI 细节修复
+
+**做了什么：**
+- **Docker 预构建镜像**：将前后端镜像推送到阿里云容器镜像服务（ACR），国内 CDN 加速，别人 pull 即可使用，无需本地构建
+- **版本管理**：每次推送同时打 `latest` 和版本号（如 `v1.1`）两个标签，支持回滚到指定版本；push.sh 脚本自动递增版本号并更新 VERSIONS.md
+- **docker-compose.pull.yml**：新增预构建镜像部署配置，通过环境变量 `${BACKEND_TAG:-latest}` 支持版本选择
+- **README 重构**：明确区分"部署方式"（预构建/源码构建）和"运行方式"（Linux/Windows bat/手机访问），命令区分 Linux/Windows/macOS
+- **详情页长文本展开**：长文本字段（描述、根本原因、内容等）独占整行完全展开，短字段保持网格布局
+- **关联防重复**：SuggestionBar 点击后按钮变"✅ 已关联"并禁用，RelationPicker 已关联实体灰色禁用+成功提示
+- **表单验证**：effectiveness（有效性）和 rating（评分）改为下拉框（1-5），后端 Pydantic 校验范围
+- **CORS 允许局域网**：后端 CORS 改为 `allow_origins=["*"]`，支持手机/局域网访问
+- **API 动态地址**：前端 api.ts 根据 `window.location.hostname` 动态获取后端地址，局域网访问自动适配
+- **Favicon**：蓝紫渐变准星图标，代表 Capture（捕获）+ OS（系统）
+- **知识库录入**：录入 12 条知识（Docker 层缓存、WSL2 网络、CORS 原理、ACR 推送、版本管理等），形成完整的问题→方案→知识链路
+
+**为什么：** 别人 clone 后构建太慢（5-10 分钟），Docker Hub 国内访问慢且免费版 token 权限受限，需要一个国内可直接拉取的镜像源。同时修复了一批 UI 交互细节问题。
+
+**效果：** 别人 pull 镜像 2-3 分钟即可启动，支持版本回滚，手机局域网可访问，详情页阅读体验提升，关联操作有明确反馈。
 
 ---
 
