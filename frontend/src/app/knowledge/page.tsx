@@ -82,18 +82,18 @@ const columns = [
 
 export default function KnowledgePage() {
   const router = useRouter();
-  const { data, error, isLoading, mutate } = useSWR<Knowledge[]>('/knowledge/', fetchAPI);
+  const { data, error, isLoading, mutate } = useSWR<Knowledge[]>('/knowledges/', fetchAPI);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Knowledge | null>(null);
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
     if (editingItem) {
-      await fetchAPI(`/knowledge/${editingItem.id}`, {
+      await fetchAPI(`/knowledges/${editingItem.id}`, {
         method: 'PUT',
         body: JSON.stringify(formData),
       });
     } else {
-      await fetchAPI('/knowledge/', {
+      await fetchAPI('/knowledges/', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
@@ -105,7 +105,7 @@ export default function KnowledgePage() {
 
   const handleDelete = async (item: Knowledge) => {
     if (confirm(`确定要删除 "${item.title}" 吗？`)) {
-      await fetchAPI(`/knowledge/${item.id}`, { method: 'DELETE' });
+      await fetchAPI(`/knowledges/${item.id}`, { method: 'DELETE' });
       mutate();
     }
   };

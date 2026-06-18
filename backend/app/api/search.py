@@ -1,4 +1,4 @@
-"""Search API — 支持中文子串匹配。"""
+"""Search API — 支持中文子串匹配和标签筛选。"""
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,7 @@ from app.models.knowledge import Knowledge
 from app.models.project import Project
 from app.models.review import Review
 from app.models.solution import Solution
+from app.models.tag import EntityTag
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -28,35 +29,58 @@ SEARCH_CONFIG = [
 
 @router.get("/")
 async def search(
-    q: str = Query(..., min_length=1),
+    q: str | None = Query(None),
     entity_type: str | None = None,
+    tag_id: int | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     results = []
+
+    # 如果有 tag_id，先获取关联的实体 ID
+    tag_entity_filter = None
+    if tag_id is not None:
+        tag_query = select(EntityTag.entity_type, EntityTag.entity_id).where(
+            EntityTag.tag_id == tag_id
+        )
+        tag_result = await db.execute(tag_query)
+        tag_entities = {(et.entity_type, et.entity_id) for et in tag_result.all()}
+        tag_entity_filter = tag_entities
 
     for etype, model, search_fields in SEARCH_CONFIG:
         if entity_type and etype != entity_type:
             continue
 
-        # 使用 ILIKE 做子串匹配，支持中文
-        conditions = [field.ilike(f"%{q}%") for field in search_fields]
-        query = select(model).where(or_(*conditions)).limit(10)
+        if q:
+            # 有关键词：ILIKE 子串匹配
+            conditions = [field.ilike(f"%{q}%") for field in search_fields]
+            query = select(model).where(or_(*conditions)).limit(20)
+        else:
+            # 无关键词：返回全部
+            query = select(model).limit(20)
+
         result = await db.execute(query)
         items = result.scalars().all()
 
         for item in items:
+            # 如果有标签筛选，检查实体是否在标签关联中
+            if tag_entity_filter is not None:
+                if (etype, item.id) not in tag_entity_filter:
+                    continue
+
             results.append({
                 "entity_type": etype,
                 "entity_id": item.id,
                 "title": item.title,
-                "snippet": _get_snippet(item, search_fields, q),
+                "snippet": _get_snippet(item, search_fields, q) if q else "",
             })
 
-    return {"query": q, "results": results, "total": len(results)}
+    return {"query": q or "", "results": results, "total": len(results)}
 
 
-def _get_snippet(item, fields, query: str) -> str:
+def _get_snippet(item, fields, query: str | None) -> str:
     """从匹配字段中提取包含查询词的片段。"""
+    if not query:
+        return ""
     for field in fields:
         value = getattr(item, field.name, None)
         if value and query.lower() in value.lower():

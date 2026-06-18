@@ -12,8 +12,8 @@ router = create_crud_router(
     create_schema=KnowledgeCreate,
     update_schema=KnowledgeUpdate,
     response_schema=KnowledgeResponse,
-    prefix="/knowledge",
-    tags=["knowledge"],
+    prefix="/knowledges",
+    tags=["knowledges"],
 )
 
 

@@ -13,6 +13,7 @@ interface Tag {
   color: string | null;
   level: number;
   description: string | null;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -47,7 +48,7 @@ function TagBlock({ tag }: { tag: Tag }) {
         />
         {/* 等级数字 */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+          <span className="text-sm font-extrabold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             {level}
           </span>
         </div>
@@ -138,15 +139,20 @@ export default function TagsPage() {
   const [editingItem, setEditingItem] = useState<Tag | null>(null);
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
+    // 转换 level 为整数
+    const submitData = {
+      ...formData,
+      level: Number(formData.level) || 1,
+    };
     if (editingItem) {
       await fetchAPI(`/tags/${editingItem.id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
     } else {
       await fetchAPI('/tags/', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
     }
     setShowForm(false);
@@ -155,7 +161,15 @@ export default function TagsPage() {
   };
 
   const handleDelete = async (item: Tag) => {
-    if (confirm(`确定要删除标签 "${item.name}" 吗？`)) {
+    // 获取关联数量
+    const { count } = await fetchAPI<{ count: number }>(`/tags/${item.id}/entity-count`);
+
+    let message = `确定要删除标签 "${item.name}" 吗？`;
+    if (count > 0) {
+      message = `标签 "${item.name}" 已关联 ${count} 个实体。\n\n点击"确定"将停用此标签（保留历史数据），点击"取消"放弃操作。`;
+    }
+
+    if (confirm(message)) {
       await fetchAPI(`/tags/${item.id}`, { method: 'DELETE' });
       mutate();
     }

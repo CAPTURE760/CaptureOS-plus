@@ -28,17 +28,17 @@ export default function KnowledgeDetailPage() {
   const id = Number(params.id);
   const [showEdit, setShowEdit] = useState(false);
 
-  const { data: entity, error, isLoading, mutate } = useSWR(`/knowledge/${id}`, fetchAPI);
+  const { data: entity, error, isLoading, mutate } = useSWR(`/knowledges/${id}`, fetchAPI);
 
   const handleDelete = async () => {
     if (confirm('确定要删除这条知识吗？')) {
-      await fetchAPI(`/knowledge/${id}`, { method: 'DELETE' });
+      await fetchAPI(`/knowledges/${id}`, { method: 'DELETE' });
       router.push('/knowledge');
     }
   };
 
   const handleEdit = async (formData: Record<string, unknown>) => {
-    await fetchAPI(`/knowledge/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
+    await fetchAPI(`/knowledges/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
     setShowEdit(false);
     mutate();
   };

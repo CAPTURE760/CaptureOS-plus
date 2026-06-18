@@ -30,6 +30,13 @@ const ENTITY_LABELS: Record<string, string> = {
 };
 
 // 每种源实体对目标实体的默认关系类型
+// entityType → API 路径前缀（复数）
+const ENTITY_API_PATH: Record<string, string> = {
+  project: 'projects', experience: 'experiences', issue: 'issues',
+  solution: 'solutions', knowledge: 'knowledges', decision: 'decisions', review: 'reviews',
+};
+
+// 每种源实体对目标实体的默认关系类型
 const DEFAULT_RELATION: Record<string, Record<string, string>> = {
   issue: { solution: 'solved_by', knowledge: 'learned_from', decision: 'follows', review: 'follows', project: 'part_of' },
   solution: { issue: 'caused_by', knowledge: 'learned_from', project: 'part_of' },
@@ -51,8 +58,8 @@ export default function RelationPicker({
   const { data: relationTypes } = useSWR<RelationType[]>('/relations/types/', fetchAPI);
 
   // 获取目标类型的实体列表
-  const pluralType = `${targetType}s`;
-  const { data: entities } = useSWR<EntityItem[]>(`/${pluralType}/?limit=100`, fetchAPI);
+  const apiPath = ENTITY_API_PATH[targetType] || targetType;
+  const { data: entities } = useSWR<EntityItem[]>(`/${apiPath}/?limit=100`, fetchAPI);
 
   // 过滤搜索
   const filteredEntities = entities?.filter((e) =>

@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 
+interface Tag {
+  id: number;
+  name: string;
+  color: string | null;
+  level: number;
+}
+
 interface SearchResult {
   entity_type: string;
   entity_id: number;
@@ -38,21 +45,28 @@ const entityRoutes: Record<string, string> = {
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  // 获取所有标签
+  const { data: tags } = useSWR<Tag[]>('/tags/', fetchAPI);
 
   const params = new URLSearchParams();
-  if (searchQuery) params.set('q', searchQuery);
+  if (query.trim()) params.set('q', query.trim());
   if (entityFilter) params.set('entity_type', entityFilter);
+  if (tagFilter) params.set('tag_id', tagFilter);
 
+  // 有筛选条件或已提交搜索时触发请求
+  const shouldFetch = submitted || entityFilter || tagFilter;
   const { data, error, isLoading } = useSWR<SearchResponse>(
-    searchQuery ? `/search/?${params.toString()}` : null,
+    shouldFetch ? `/search/?${params.toString()}` : null,
     fetchAPI
   );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchQuery(query);
+    setSubmitted(true);
   };
 
   // 按类型分组结果
@@ -73,17 +87,27 @@ export default function SearchPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="输入关键词搜索..."
+            placeholder="输入关键词，或直接选择类型/标签筛选"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <select
             value={entityFilter}
-            onChange={(e) => { setEntityFilter(e.target.value); setSearchQuery(query); }}
+            onChange={(e) => setEntityFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
             <option value="">全部类型</option>
             {Object.entries(entityLabels).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            <option value="">全部标签</option>
+            {tags?.map((tag) => (
+              <option key={tag.id} value={tag.id}>{tag.name}</option>
             ))}
           </select>
           <button type="submit"

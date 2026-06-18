@@ -53,6 +53,12 @@ interface EntityDetailProps {
   onDelete: () => void;
 }
 
+// entityType → API 路径前缀（复数）
+const ENTITY_API_PATH: Record<string, string> = {
+  project: 'projects', experience: 'experiences', issue: 'issues',
+  solution: 'solutions', knowledge: 'knowledges', decision: 'decisions', review: 'reviews',
+};
+
 const ENTITY_ICONS: Record<string, string> = {
   project: '📁', experience: '💡', issue: '⚠️',
   solution: '🔧', knowledge: '📚', decision: '🎯', review: '📝',
@@ -103,8 +109,9 @@ export default function EntityDetail({
   );
 
   // 获取关联
+  const apiPath = ENTITY_API_PATH[entityType] || entityType;
   const { data: relatedData, mutate: mutateRelated } = useSWR<RelatedResponse>(
-    `/${entityType}s/${entityId}/related`, fetchAPI
+    `/${apiPath}/${entityId}/related`, fetchAPI
   );
 
   const currentTags = entityTags
