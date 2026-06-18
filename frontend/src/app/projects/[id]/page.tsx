@@ -22,6 +22,9 @@ const fields = [
     { value: '紧急', label: '🔴 紧急' }, { value: '高', label: '🟠 高' },
     { value: '中', label: '🟡 中' }, { value: '低', label: '🟢 低' },
   ]},
+  { name: 'deploy_url', label: '部署地址', placeholder: 'https://...' },
+  { name: 'run_command', label: '运行方式', type: 'textarea' as const, rows: 3, placeholder: 'docker compose up -d 等' },
+  { name: 'tech_stack', label: '技术栈', placeholder: 'Next.js, FastAPI, PostgreSQL' },
 ];
 
 export default function ProjectDetailPage() {

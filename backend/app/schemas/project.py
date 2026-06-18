@@ -11,6 +11,9 @@ class ProjectBase(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     priority: str = "中"
+    deploy_url: Optional[str] = None
+    run_command: Optional[str] = None
+    tech_stack: Optional[str] = None
 
 
 class ProjectCreate(ProjectBase):
@@ -24,6 +27,9 @@ class ProjectUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     priority: Optional[str] = None
+    deploy_url: Optional[str] = None
+    run_command: Optional[str] = None
+    tech_stack: Optional[str] = None
 
 
 class ProjectResponse(ProjectBase):
