@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
+import Pagination from '@/components/Pagination';
 
 interface Knowledge {
   id: number;
@@ -80,11 +81,20 @@ const columns = [
   },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function KnowledgePage() {
   const router = useRouter();
-  const { data, error, isLoading, mutate } = useSWR<Knowledge[]>('/knowledges/', fetchAPI);
+  const [page, setPage] = useState(1);
+  const skip = (page - 1) * PAGE_SIZE;
+  const { data, error, isLoading, mutate } = useSWR<Knowledge[]>(
+    `/knowledges/?skip=${skip}&limit=${PAGE_SIZE}`, fetchAPI
+  );
+  const { data: countData } = useSWR<{ count: number }>('/knowledges/count/', fetchAPI);
+  const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Knowledge | null>(null);
+  const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
     if (editingItem) {
@@ -101,12 +111,14 @@ export default function KnowledgePage() {
     setShowForm(false);
     setEditingItem(null);
     mutate();
+    globalMutate('/knowledges/count/');
   };
 
   const handleDelete = async (item: Knowledge) => {
     if (confirm(`确定要删除 "${item.title}" 吗？`)) {
       await fetchAPI(`/knowledges/${item.id}`, { method: 'DELETE' });
       mutate();
+      globalMutate('/knowledges/count/');
     }
   };
 
@@ -118,7 +130,7 @@ export default function KnowledgePage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">📚 知识库</h1>
-          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 条知识</p>
+          <p className="text-sm text-gray-500 mt-1">共 {total} 条知识</p>
         </div>
         <button
           onClick={() => {
@@ -153,6 +165,8 @@ export default function KnowledgePage() {
         onDelete={handleDelete}
         onRefresh={() => mutate()}
       />
+
+      <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   );
 }

@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
+import Pagination from '@/components/Pagination';
 
 interface Solution {
   id: number;
@@ -61,11 +62,20 @@ const columns = [
   },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function SolutionsPage() {
   const router = useRouter();
-  const { data, error, isLoading, mutate } = useSWR<Solution[]>('/solutions/', fetchAPI);
+  const [page, setPage] = useState(1);
+  const skip = (page - 1) * PAGE_SIZE;
+  const { data, error, isLoading, mutate } = useSWR<Solution[]>(
+    `/solutions/?skip=${skip}&limit=${PAGE_SIZE}`, fetchAPI
+  );
+  const { data: countData } = useSWR<{ count: number }>('/solutions/count/', fetchAPI);
+  const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Solution | null>(null);
+  const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
     if (editingItem) {
@@ -82,12 +92,14 @@ export default function SolutionsPage() {
     setShowForm(false);
     setEditingItem(null);
     mutate();
+    globalMutate('/solutions/count/');
   };
 
   const handleDelete = async (item: Solution) => {
     if (confirm(`确定要删除 "${item.title}" 吗？`)) {
       await fetchAPI(`/solutions/${item.id}`, { method: 'DELETE' });
       mutate();
+      globalMutate('/solutions/count/');
     }
   };
 
@@ -99,7 +111,7 @@ export default function SolutionsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">🔧 解决方案</h1>
-          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 个方案</p>
+          <p className="text-sm text-gray-500 mt-1">共 {total} 个方案</p>
         </div>
         <button
           onClick={() => {
@@ -134,6 +146,8 @@ export default function SolutionsPage() {
         onDelete={handleDelete}
         onRefresh={() => mutate()}
       />
+
+      <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   );
 }

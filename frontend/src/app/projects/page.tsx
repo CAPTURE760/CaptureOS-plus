@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
+import Pagination from '@/components/Pagination';
 
 interface Project {
   id: number;
@@ -118,11 +119,20 @@ const columns = [
   },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function ProjectsPage() {
   const router = useRouter();
-  const { data, error, isLoading, mutate } = useSWR<Project[]>('/projects/', fetchAPI);
+  const [page, setPage] = useState(1);
+  const skip = (page - 1) * PAGE_SIZE;
+  const { data, error, isLoading, mutate } = useSWR<Project[]>(
+    `/projects/?skip=${skip}&limit=${PAGE_SIZE}`, fetchAPI
+  );
+  const { data: countData } = useSWR<{ count: number }>('/projects/count/', fetchAPI);
+  const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Project | null>(null);
+  const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
     if (editingItem) {
@@ -139,12 +149,14 @@ export default function ProjectsPage() {
     setShowForm(false);
     setEditingItem(null);
     mutate();
+    globalMutate('/projects/count/');
   };
 
   const handleDelete = async (item: Project) => {
     if (confirm(`确定要删除 "${item.title}" 吗？`)) {
       await fetchAPI(`/projects/${item.id}`, { method: 'DELETE' });
       mutate();
+      globalMutate('/projects/count/');
     }
   };
 
@@ -156,7 +168,7 @@ export default function ProjectsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">📁 项目管理</h1>
-          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 个项目</p>
+          <p className="text-sm text-gray-500 mt-1">共 {total} 个项目</p>
         </div>
         <button
           onClick={() => {
@@ -192,6 +204,8 @@ export default function ProjectsPage() {
         onDelete={handleDelete}
         onRefresh={() => mutate()}
       />
+
+      <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   );
 }

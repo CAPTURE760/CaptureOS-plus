@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime, formatBeijingDate } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
+import Pagination from '@/components/Pagination';
 
 interface Review {
   id: number;
@@ -72,11 +73,20 @@ const columns = [
   },
 ];
 
+const PAGE_SIZE = 20;
+
 export default function ReviewsPage() {
   const router = useRouter();
-  const { data, error, isLoading, mutate } = useSWR<Review[]>('/reviews/', fetchAPI);
+  const [page, setPage] = useState(1);
+  const skip = (page - 1) * PAGE_SIZE;
+  const { data, error, isLoading, mutate } = useSWR<Review[]>(
+    `/reviews/?skip=${skip}&limit=${PAGE_SIZE}`, fetchAPI
+  );
+  const { data: countData } = useSWR<{ count: number }>('/reviews/count/', fetchAPI);
+  const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Review | null>(null);
+  const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
     if (editingItem) {
@@ -93,12 +103,14 @@ export default function ReviewsPage() {
     setShowForm(false);
     setEditingItem(null);
     mutate();
+    globalMutate('/reviews/count/');
   };
 
   const handleDelete = async (item: Review) => {
     if (confirm(`确定要删除 "${item.title}" 吗？`)) {
       await fetchAPI(`/reviews/${item.id}`, { method: 'DELETE' });
       mutate();
+      globalMutate('/reviews/count/');
     }
   };
 
@@ -110,7 +122,7 @@ export default function ReviewsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">📝 复盘总结</h1>
-          <p className="text-sm text-gray-500 mt-1">共 {data?.length || 0} 次复盘</p>
+          <p className="text-sm text-gray-500 mt-1">共 {total} 次复盘</p>
         </div>
         <button
           onClick={() => {
@@ -145,6 +157,8 @@ export default function ReviewsPage() {
         onDelete={handleDelete}
         onRefresh={() => mutate()}
       />
+
+      <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
     </div>
   );
 }
