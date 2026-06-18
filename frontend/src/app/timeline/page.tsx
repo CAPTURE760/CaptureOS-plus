@@ -68,7 +68,6 @@ export default function TimelinePage() {
     : data;
 
   // 快捷按钮 active 判断
-  const today = fmt(new Date());
   const now = new Date();
   const weekday = now.getDay() || 7;
   const monday = new Date(now); monday.setDate(now.getDate() - weekday + 1);
