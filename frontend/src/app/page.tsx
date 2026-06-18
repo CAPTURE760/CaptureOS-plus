@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
@@ -64,7 +65,31 @@ const STATUS_LABELS: Record<string, Record<string, string>> = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [exporting, setExporting] = useState(false);
   const { data, error, isLoading } = useSWR<DashboardData>('/dashboard/', fetchAPI);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const res = await fetch(`${API_BASE}/export/`);
+      if (!res.ok) throw new Error('导出失败');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `captureos-export-${today}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('导出失败，请重试');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (isLoading) return <div className="text-center py-8">加载中...</div>;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
@@ -81,8 +106,17 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">CaptureOS</h1>
-        <div className="text-sm text-gray-400">
-          {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {exporting ? '导出中...' : '📥 导出数据'}
+          </button>
+          <div className="text-sm text-gray-400">
+            {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+          </div>
         </div>
       </div>
 
