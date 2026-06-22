@@ -50,7 +50,8 @@
       "Bash(python3 /tmp/fix_init.py)",
       "Bash(python /tmp/fix_init.py)",
       "Bash(node -e ' *)",
-      "Bash(node /tmp/fix_filter_count.js)"
+      "Bash(node /tmp/fix_filter_count.js)",
+      "Bash(docker login *)"
     ]
   }
 }
