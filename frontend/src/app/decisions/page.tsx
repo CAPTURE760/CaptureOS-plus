@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
+import ExportButton from '@/components/ExportButton';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
+import FilterBar from '@/components/FilterBar';
+import { decisionStatusOptions, statusBgClass } from '@/lib/constants';
 
 interface Decision {
   id: number;
@@ -31,18 +34,17 @@ const fields = [
   { name: 'decision_date', label: '决策时间', type: 'datetime-local' as const },
   {
     name: 'status', label: '状态', type: 'select' as const,
-    options: [
-      { value: 'pending', label: '📋 待执行' },
-      { value: 'in_progress', label: '🔄 执行中' },
-      { value: 'completed', label: '✅ 已完成' },
-      { value: 'deprecated', label: '❌ 已废弃' },
-    ],
+    options: decisionStatusOptions.map(o => ({ value: o.value, label: o.label })),
   },
   {
     name: 'confidence', label: '置信度 (0-10)', type: 'select' as const,
     options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: `${i} (${i * 10}%)` })),
   },
 ];
+
+const decisionStatusLabelMap: Record<string, string> = Object.fromEntries(
+  decisionStatusOptions.map(o => [o.value, o.label])
+);
 
 const columns = [
   { key: 'title', label: '标题', width: '25%' },
@@ -60,15 +62,8 @@ const columns = [
     key: 'status',
     label: '状态',
     render: (item: Decision) => (
-      <span className={`px-2 py-1 rounded text-xs ${
-        item.status === 'completed' ? 'bg-green-100 text-green-800' :
-        item.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-        item.status === 'deprecated' ? 'bg-red-100 text-red-800' :
-        'bg-gray-100 text-gray-800'
-      }`}>
-        {item.status === 'completed' ? '✅ 已完成' :
-         item.status === 'in_progress' ? '🔄 执行中' :
-         item.status === 'deprecated' ? '❌ 已废弃' : '📋 待执行'}
+      <span className={`px-2 py-1 rounded text-xs ${statusBgClass[item.status] || 'bg-gray-100 text-gray-800'}`}>
+        {decisionStatusLabelMap[item.status] || item.status}
       </span>
     ),
     width: '10%',
@@ -98,11 +93,19 @@ const PAGE_SIZE = 20;
 export default function DecisionsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const skip = (page - 1) * PAGE_SIZE;
   const { data, error, isLoading, mutate } = useSWR<Decision[]>(
-    `/decisions/?skip=${skip}&limit=${PAGE_SIZE}`, fetchAPI
+    `/decisions/?skip=${skip}&limit=${PAGE_SIZE}${filterStatus ? `&status=${filterStatus}` : ''}`, fetchAPI
   );
-  const { data: countData } = useSWR<{ count: number }>('/decisions/count/', fetchAPI);
+  const { data: countData } = useSWR<{ count: number }>(
+    `/decisions/count/${filterStatus ? `?status=${filterStatus}` : ''}`,
+    fetchAPI
+  );
+  const { data: allCountData } = useSWR<{ count: number }>(
+    filterStatus ? '/decisions/count/' : null,
+    fetchAPI
+  );
   const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Decision | null>(null);
@@ -147,6 +150,30 @@ export default function DecisionsPage() {
     mutate();
   };
 
+  const handleBatchExport = async () => {
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const res = await fetch(`${API_BASE}/export/word/decisions/selected`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) throw new Error('导出失败');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `captureos-decisions-selected-${today}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('导出失败，请重试');
+    }
+  };
+
   const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
@@ -189,6 +216,7 @@ export default function DecisionsPage() {
           <h1 className="text-2xl font-bold">🎯 决策记录</h1>
           <p className="text-sm text-gray-500 mt-1">共 {total} 条决策</p>
         </div>
+        <ExportButton entityType="decisions" />
         <button
           onClick={() => {
             setEditingItem(null);
@@ -211,6 +239,14 @@ export default function DecisionsPage() {
         />
       )}
 
+      <FilterBar
+        statusFilters={decisionStatusOptions.map(o => ({ value: o.value, label: o.label }))}
+        activeStatus={filterStatus}
+        onStatusChange={(s) => { setFilterStatus(s); setPage(1); }}
+        filteredCount={filterStatus || filterPriority ? total : undefined}
+        totalCount={filterStatus || filterPriority ? (allCountData?.count ?? total) : undefined}
+      />
+
       <EntityList entityType="decision"
         data={data || []}
         columns={columns}
@@ -226,6 +262,7 @@ export default function DecisionsPage() {
         onSelectAll={handleSelectAll}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
+        onBatchExport={handleBatchExport}
       />
 
       <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />

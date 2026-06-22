@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface Field {
   name: string;
@@ -124,12 +125,11 @@ function FormFields({
             {field.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           {field.type === 'textarea' ? (
-            <textarea
+            <MarkdownField
               name={field.name}
               value={(formData[field.name] as string) || ''}
-              onChange={(e) => handleChange(field.name, e.target.value)}
+              onChange={handleChange}
               required={field.required}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y min-h-[80px]"
               rows={field.rows || 4}
               placeholder={`请输入${field.label}...`}
             />
@@ -181,5 +181,64 @@ function FormFields({
         </div>
       ))}
     </>
+  );
+}
+
+/** Markdown 文本域 — 支持编辑/预览切换 */
+function MarkdownField({
+  name, value, onChange, required, rows, placeholder,
+}: {
+  name: string;
+  value: string;
+  onChange: (name: string, value: unknown) => void;
+  required?: boolean;
+  rows?: number;
+  placeholder?: string;
+}) {
+  const [preview, setPreview] = useState(false);
+
+  return (
+    <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+      {/* 切换按钮栏 */}
+      <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 border-b border-gray-200">
+        <button
+          type="button"
+          onClick={() => setPreview(false)}
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
+            !preview ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          编辑
+        </button>
+        <button
+          type="button"
+          onClick={() => setPreview(true)}
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
+            preview ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          预览
+        </button>
+        <span className="ml-auto text-[10px] text-gray-400">支持 Markdown</span>
+      </div>
+
+      {/* 编辑/预览内容 */}
+      {preview ? (
+        <div
+          className="px-3 py-2 min-h-[80px] bg-white prose prose-sm max-w-none text-sm"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(value) || '<span class="text-gray-400">暂无内容</span>' }}
+        />
+      ) : (
+        <textarea
+          name={name}
+          value={value}
+          onChange={(e) => onChange(name, e.target.value)}
+          required={required}
+          rows={rows || 4}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 border-0 focus:ring-0 resize-y min-h-[80px]"
+        />
+      )}
+    </div>
   );
 }

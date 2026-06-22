@@ -29,9 +29,16 @@ def create_crud_router(
     async def list_items(
         skip: int = Query(0, ge=0),
         limit: int = Query(20, ge=1, le=100),
+        status: str | None = Query(None),
+        priority: str | None = Query(None),
         db: AsyncSession = Depends(get_db),
     ) -> Sequence[ModelType]:
-        result = await db.execute(select(model).offset(skip).limit(limit))
+        query = select(model)
+        if status is not None and hasattr(model, 'status'):
+            query = query.where(model.status == status)
+        if priority is not None and hasattr(model, 'priority'):
+            query = query.where(model.priority == priority)
+        result = await db.execute(query.offset(skip).limit(limit))
         return result.scalars().all()
 
     @router.get("/{item_id}", response_model=response_schema)
@@ -86,9 +93,16 @@ def create_crud_router(
 
     @router.get("/count/", response_model=dict[str, int])
     async def count_items(
+        status: str | None = Query(None),
+        priority: str | None = Query(None),
         db: AsyncSession = Depends(get_db),
     ) -> dict[str, int]:
-        result = await db.execute(select(func.count(model.id)))
+        query = select(func.count(model.id))
+        if status is not None and hasattr(model, 'status'):
+            query = query.where(model.status == status)
+        if priority is not None and hasattr(model, 'priority'):
+            query = query.where(model.priority == priority)
+        result = await db.execute(query)
         count = result.scalar_one()
         return {"count": count}
 

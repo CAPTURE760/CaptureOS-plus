@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 interface PaginationProps {
   page: number;
   total: number;
@@ -9,6 +11,8 @@ interface PaginationProps {
 
 export default function Pagination({ page, total, pageSize, onPageChange }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [jumpValue, setJumpValue] = useState('');
+
   if (totalPages <= 1) return null;
 
   const pages: (number | '...')[] = [];
@@ -23,6 +27,14 @@ export default function Pagination({ page, total, pageSize, onPageChange }: Pagi
     if (page < totalPages - 2) pages.push('...');
     pages.push(totalPages);
   }
+
+  const handleJump = () => {
+    const n = parseInt(jumpValue, 10);
+    if (!isNaN(n) && n >= 1 && n <= totalPages && n !== page) {
+      onPageChange(n);
+    }
+    setJumpValue('');
+  };
 
   return (
     <div className="flex items-center justify-between mt-4 px-2">
@@ -61,6 +73,21 @@ export default function Pagination({ page, total, pageSize, onPageChange }: Pagi
         >
           下一页
         </button>
+        {totalPages > 7 && (
+          <div className="flex items-center gap-1 ml-2">
+            <span className="text-xs text-gray-400">跳至</span>
+            <input
+              type="text"
+              value={jumpValue}
+              onChange={(e) => setJumpValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleJump()}
+              onBlur={handleJump}
+              placeholder={String(totalPages)}
+              className="w-12 px-1.5 py-1 text-xs text-center border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+            />
+            <span className="text-xs text-gray-400">页</span>
+          </div>
+        )}
       </div>
     </div>
   );

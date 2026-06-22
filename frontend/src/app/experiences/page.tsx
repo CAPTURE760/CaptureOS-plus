@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
+import ExportButton from '@/components/ExportButton';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
@@ -126,6 +127,30 @@ export default function ExperiencesPage() {
     mutate();
   };
 
+  const handleBatchExport = async () => {
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const res = await fetch(`${API_BASE}/export/word/experiences/selected`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) throw new Error('导出失败');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `captureos-experiences-selected-${today}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('导出失败，请重试');
+    }
+  };
+
   const total = countData?.count || 0;
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
@@ -168,6 +193,7 @@ export default function ExperiencesPage() {
           <h1 className="text-2xl font-bold">💡 经验管理</h1>
           <p className="text-sm text-gray-500 mt-1">共 {total} 条经验</p>
         </div>
+        <ExportButton entityType="experiences" />
         <button
           onClick={() => {
             setEditingItem(null);
@@ -205,6 +231,7 @@ export default function ExperiencesPage() {
         onSelectAll={handleSelectAll}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
+        onBatchExport={handleBatchExport}
       />
 
       <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />

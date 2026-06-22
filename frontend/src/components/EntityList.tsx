@@ -40,6 +40,9 @@ interface EntityListProps<T> {
   onSelectAll?: () => void;
   onBatchDelete?: () => void;
   onBatchTag?: (tagId: number) => void;
+  onBatchExport?: () => void;
+  // 手机端卡片显示的列 key，不传则自动选前 2 列（跳过最后一列如创建时间）
+  mobileKeys?: string[];
 }
 
 // 小标签方块
@@ -49,12 +52,12 @@ function TagBadge({ tag }: { tag: Tag }) {
 
   return (
     <div
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0"
       style={{ backgroundColor: `${color}20`, border: `1px solid ${color}40` }}
       title={`${tag.name} - 等级${level}`}
     >
       <div
-        className="w-4 h-3 rounded-sm overflow-hidden relative"
+        className="w-4 h-3 rounded-sm overflow-hidden relative shrink-0"
         style={{ border: `1px solid ${color}` }}
       >
         <div
@@ -65,7 +68,7 @@ function TagBadge({ tag }: { tag: Tag }) {
           <span className="text-[7px] font-bold text-white drop-shadow">{level}</span>
         </div>
       </div>
-      <span className="text-xs" style={{ color }}>{tag.name}</span>
+      <span className="text-xs whitespace-nowrap" style={{ color }}>{tag.name}</span>
     </div>
   );
 }
@@ -83,6 +86,8 @@ export default function EntityList<T extends { id: number }>({
   onSelectAll,
   onBatchDelete,
   onBatchTag,
+  onBatchExport,
+  mobileKeys,
 }: EntityListProps<T>) {
   const [tagPickerItem, setTagPickerItem] = useState<T | null>(null);
   const [showBatchTag, setShowBatchTag] = useState(false);
@@ -96,7 +101,7 @@ export default function EntityList<T extends { id: number }>({
     { dedupingInterval: 30000 }
   );
 
-  const hasBatchActions = !!onBatchDelete || !!onBatchTag;
+  const hasBatchActions = !!onBatchDelete || !!onBatchTag || !!onBatchExport;
   const selectedCount = selectedIds?.size || 0;
   const allSelected = data.length > 0 && data.every(item => selectedIds?.has(item.id));
 
@@ -146,7 +151,7 @@ export default function EntityList<T extends { id: number }>({
                   {col.label}
                 </th>
               ))}
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-32">
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 min-w-[120px]">
                 标签
               </th>
               {(onEdit || onDelete || onView) && (
@@ -289,7 +294,10 @@ export default function EntityList<T extends { id: number }>({
                   <div className="font-medium text-gray-900 truncate">
                     {(item as Record<string, unknown>)[columns[0]?.key] ?? '-'}
                   </div>
-                  {columns.slice(1, 3).map((col) => (
+                  {(mobileKeys
+                    ? columns.filter(c => mobileKeys.includes(c.key))
+                    : columns.slice(1, Math.min(3, columns.length - 1))
+                  ).map((col) => (
                     <div key={col.key} className="text-sm text-gray-500 mt-1 truncate">
                       <span className="text-gray-400">{col.label}：</span>
                       {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
@@ -374,6 +382,14 @@ export default function EntityList<T extends { id: number }>({
                   </div>
                 )}
               </div>
+            )}
+            {onBatchExport && (
+              <button
+                onClick={onBatchExport}
+                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+              >
+                📄 导出选中
+              </button>
             )}
           </div>
           <button

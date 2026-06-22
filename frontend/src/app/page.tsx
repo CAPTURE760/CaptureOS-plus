@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
+import ExportButton from '@/components/ExportButton';
 
 interface PendingItem {
   id: number;
@@ -46,6 +47,18 @@ interface DashboardData {
   recent_activity: Activity[];
 }
 
+interface ImportResult {
+  imported: Record<string, number>;
+  skipped: Record<string, number>;
+  errors: string[];
+  validation_errors: Array<{
+    entity: string;
+    index: number;
+    field: string;
+    message: string;
+  }>;
+}
+
 const ENTITY_ROUTES: Record<string, string> = {
   project: '/projects', experience: '/experiences', issue: '/issues',
   solution: '/solutions', knowledge: '/knowledge', decision: '/decisions', review: '/reviews',
@@ -63,31 +76,45 @@ const STATUS_LABELS: Record<string, Record<string, string>> = {
   decisions: { pending: '待执行', in_progress: '执行中', completed: '已完成', deprecated: '已废弃' },
 };
 
+const IMPORT_ENTITY_LABELS: Record<string, string> = {
+  tags: '标签', projects: '项目', experiences: '经验', issues: '问题',
+  solutions: '解决方案', knowledge: '知识', decisions: '决策', reviews: '复盘',
+  entity_tags: '实体标签', relations: '关联关系', relation_types: '关系类型',
+};
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [exporting, setExporting] = useState(false);
-  const { data, error, isLoading } = useSWR<DashboardData>('/dashboard/', fetchAPI);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data, error, isLoading, mutate } = useSWR<DashboardData>('/dashboard/', fetchAPI);
 
-  const handleExport = async () => {
-    setExporting(true);
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
     try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      if (!json.data) {
+        alert('文件格式不正确，缺少 data 字段');
+        return;
+      }
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
-      const res = await fetch(`${API_BASE}/export/`);
-      if (!res.ok) throw new Error('导出失败');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const today = new Date().toISOString().slice(0, 10);
-      a.href = url;
-      a.download = `captureos-export-${today}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const res = await fetch(`${API_BASE}/import/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: text,
+      });
+      if (!res.ok) throw new Error('导入失败');
+      const result: ImportResult = await res.json();
+      setImportResult(result);
+      mutate(); // 刷新仪表盘数据
     } catch (e) {
-      alert('导出失败，请重试');
+      alert('导入失败，请检查文件格式');
     } finally {
-      setExporting(false);
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -107,13 +134,21 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">CaptureOS</h1>
         <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            className="hidden"
+          />
           <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {exporting ? '导出中...' : '📥 导出数据'}
+            {importing ? '导入中...' : '📤 导入数据'}
           </button>
+          <ExportButton variant="primary" />
           <div className="text-sm text-gray-400">
             {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
@@ -292,6 +327,63 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {/* 导入结果弹窗 */}
+      {importResult && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setImportResult(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-4">📤 导入完成 ✅</h3>
+            <div className="space-y-2 mb-4">
+              {Object.entries(IMPORT_ENTITY_LABELS).map(([key, label]) => {
+                const imp = importResult.imported[key] || 0;
+                const skp = importResult.skipped[key] || 0;
+                if (imp === 0 && skp === 0) return null;
+                return (
+                  <div key={key} className="flex items-center justify-between text-sm py-1 border-b border-gray-100 last:border-0">
+                    <span className="text-gray-700">{label}</span>
+                    <span className="text-gray-500">
+                      {imp > 0 && <span className="text-green-600">{`导入 ${imp}`}</span>}
+                      {imp > 0 && skp > 0 && <span className="mx-1">{`, `}</span>}
+                      {skp > 0 && <span className="text-amber-600">{`跳过 ${skp}`}</span>}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {importResult.errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <div className="text-sm font-medium text-red-700 mb-1">错误：</div>
+                {importResult.errors.map((err, i) => (
+                  <div key={i} className="text-xs text-red-600">{err}</div>
+                ))}
+              </div>
+            )}
+            {importResult.validation_errors && importResult.validation_errors.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <div className="text-sm font-medium text-red-700 mb-2">
+                  校验失败（{importResult.validation_errors.length} 个问题）：
+                </div>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {importResult.validation_errors.map((ve, i) => (
+                    <div key={i} className="text-xs text-red-600 flex items-start gap-2">
+                      <span className="shrink-0 font-mono bg-red-100 px-1 rounded">
+                        {IMPORT_ENTITY_LABELS[ve.entity] || ve.entity} #{ve.index + 1}
+                      </span>
+                      <span>{ve.message}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <button
+              onClick={() => setImportResult(null)}
+              className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

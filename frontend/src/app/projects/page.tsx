@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
+import ExportButton from '@/components/ExportButton';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
+import FilterBar from '@/components/FilterBar';
+import { projectStatusOptions, priorityOptions, statusBgClass, priorityBgClass } from '@/lib/constants';
 
 interface Project {
   id: number;
@@ -33,23 +36,13 @@ const fields = [
     name: 'status',
     label: '状态',
     type: 'select' as const,
-    options: [
-      { value: 'active', label: '进行中' },
-      { value: 'completed', label: '已完成' },
-      { value: 'paused', label: '暂停' },
-      { value: 'cancelled', label: '已取消' },
-    ],
+    options: projectStatusOptions.map(o => ({ value: o.value, label: o.label })),
   },
   { name: 'start_date', label: '开始时间', type: 'datetime-local' as const },
   { name: 'end_date', label: '结束时间', type: 'datetime-local' as const },
   {
     name: 'priority', label: '优先级', type: 'select' as const,
-    options: [
-      { value: '紧急', label: '🔴 紧急' },
-      { value: '高', label: '🟠 高' },
-      { value: '中', label: '🟡 中' },
-      { value: '低', label: '🟢 低' },
-    ],
+    options: priorityOptions,
   },
   { name: 'source_url', label: '源文件地址', placeholder: 'D:\\projects\\xxx' },
   { name: 'github_url', label: 'GitHub 地址', placeholder: 'https://github.com/...' },
@@ -65,6 +58,14 @@ const fields = [
   { name: 'run_command', label: '运行方式', type: 'textarea' as const, rows: 3, placeholder: 'docker compose up -d 等' },
   { name: 'tech_stack', label: '技术栈', placeholder: 'Next.js, FastAPI, PostgreSQL' },
 ];
+
+const projectStatusLabelMap: Record<string, string> = Object.fromEntries(
+  projectStatusOptions.map(o => [o.value, o.label])
+);
+
+const projectStatusEmoji: Record<string, string> = {
+  active: '🟢', completed: '✅', paused: '⏸️', cancelled: '❌',
+};
 
 const columns = [
   { key: 'title', label: '标题', width: '25%' },
@@ -82,15 +83,8 @@ const columns = [
     key: 'status',
     label: '状态',
     render: (item: Project) => (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${
-        item.status === 'active' ? 'bg-green-100 text-green-800' :
-        item.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-        item.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-        'bg-gray-100 text-gray-800'
-      }`}>
-        {item.status === 'active' ? '🟢 进行中' :
-         item.status === 'completed' ? '✅ 已完成' :
-         item.status === 'paused' ? '⏸️ 暂停' : '❌ 已取消'}
+      <span className={`px-2 py-1 rounded text-xs font-medium ${statusBgClass[item.status] || 'bg-gray-100 text-gray-800'}`}>
+        {projectStatusEmoji[item.status] || ''} {projectStatusLabelMap[item.status] || item.status}
       </span>
     ),
     width: '10%',
@@ -98,13 +92,11 @@ const columns = [
   {
     key: 'priority',
     label: '优先级',
-    render: (item: Project) => {
-      const colors: Record<string, string> = {
-        '紧急': 'bg-red-100 text-red-800', '高': 'bg-orange-100 text-orange-800',
-        '中': 'bg-yellow-100 text-yellow-800', '低': 'bg-green-100 text-green-800',
-      };
-      return <span className={`px-2 py-1 rounded text-xs ${colors[item.priority] || 'bg-gray-100'}`}>{item.priority}</span>;
-    },
+    render: (item: Project) => (
+      <span className={`px-2 py-1 rounded text-xs ${priorityBgClass[item.priority] || 'bg-gray-100 text-gray-800'}`}>
+        {item.priority}
+      </span>
+    ),
     width: '8%',
   },
   {
@@ -124,11 +116,20 @@ const PAGE_SIZE = 20;
 export default function ProjectsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string | null>(null);
   const skip = (page - 1) * PAGE_SIZE;
   const { data, error, isLoading, mutate } = useSWR<Project[]>(
-    `/projects/?skip=${skip}&limit=${PAGE_SIZE}`, fetchAPI
+    `/projects/?skip=${skip}&limit=${PAGE_SIZE}${filterStatus ? `&status=${filterStatus}` : ''}${filterPriority ? `&priority=${encodeURIComponent(filterPriority)}` : ''}`, fetchAPI
   );
-  const { data: countData } = useSWR<{ count: number }>('/projects/count/', fetchAPI);
+  const { data: countData } = useSWR<{ count: number }>(
+    `/projects/count/${filterStatus || filterPriority ? '?' : ''}${filterStatus ? `status=${filterStatus}` : ''}${filterStatus && filterPriority ? '&' : ''}${filterPriority ? `priority=${encodeURIComponent(filterPriority)}` : ''}`,
+    fetchAPI
+  );
+  const { data: allCountData } = useSWR<{ count: number }>(
+    filterStatus || filterPriority ? '/projects/count/' : null,
+    fetchAPI
+  );
   const { mutate: globalMutate } = useSWRConfig();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Project | null>(null);
@@ -174,6 +175,30 @@ export default function ProjectsPage() {
     mutate();
   };
 
+  const handleBatchExport = async () => {
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const res = await fetch(`${API_BASE}/export/word/projects/selected`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) throw new Error('导出失败');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `captureos-projects-selected-${today}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('导出失败，请重试');
+    }
+  };
+
   const handleSubmit = async (formData: Record<string, unknown>) => {
     if (editingItem) {
       await fetchAPI(`/projects/${editingItem.id}`, {
@@ -214,6 +239,7 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold">📁 项目管理</h1>
           <p className="text-sm text-gray-500 mt-1">共 {total} 个项目</p>
         </div>
+        <ExportButton entityType="projects" />
         <button
           onClick={() => {
             setEditingItem(null);
@@ -236,6 +262,17 @@ export default function ProjectsPage() {
         />
       )}
 
+      <FilterBar
+        statusFilters={projectStatusOptions.map(o => ({ value: o.value, label: o.label }))}
+        priorityFilters={priorityOptions}
+        activeStatus={filterStatus}
+        activePriority={filterPriority}
+        onStatusChange={(s) => { setFilterStatus(s); setPage(1); }}
+        onPriorityChange={(p) => { setFilterPriority(p); setPage(1); }}
+        filteredCount={filterStatus || filterPriority ? total : undefined}
+        totalCount={filterStatus || filterPriority ? (allCountData?.count ?? total) : undefined}
+      />
+
       <EntityList
         data={data || []}
         columns={columns}
@@ -252,6 +289,7 @@ export default function ProjectsPage() {
         onSelectAll={handleSelectAll}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
+        onBatchExport={handleBatchExport}
       />
 
       <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />

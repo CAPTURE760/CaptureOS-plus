@@ -28,7 +28,29 @@
       "Bash(curl *)",
       "Bash(docker restart captureos-backend-1 *)",
       "Bash(docker restart captureos-frontend-1 *)",
-      "Bash(docker exec captureos-frontend-1 *)"
+      "Bash(docker exec captureos-frontend-1 *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(ip addr *)",
+      "Bash(awk '{print $2}')",
+      "Bash(git rev-list *)",
+      "Bash(git cat-file *)",
+      "Bash(awk '/^blob/ {print $3, $4}')",
+      "Bash(git lfs *)",
+      "Bash(git count-objects *)",
+      "Bash(git push *)",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(python -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2, ensure_ascii=False\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Created issue:', d.get\\('id'\\), d.get\\('title'\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Read(///wsl.localhost/Ubuntu/home/oyweiyuan/CaptureOS/**)",
+      "Bash(npx tsc *)",
+      "Bash(cat)",
+      "Bash(python3 /tmp/init_patch.py)",
+      "Bash(python3 /tmp/fix_init.py)",
+      "Bash(python /tmp/fix_init.py)",
+      "Bash(node -e ' *)",
+      "Bash(node /tmp/fix_filter_count.js)"
     ]
   }
 }
