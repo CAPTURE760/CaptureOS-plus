@@ -455,7 +455,22 @@ docker compose down
 docker compose up -d --build
 ```
 
-### 发布新版本
+### 发布新版本（推送到阿里云 ACR）
+
+#### 前置准备：配置阿里云凭证
+
+1. 登录 [阿里云容器镜像服务](https://cr.console.aliyun.com/)，创建命名空间（如 `captureos`）
+2. 获取 AccessKey ID 和 AccessKey Secret（或 Registry 密码）
+3. 在项目根目录创建 `.env` 文件：
+
+```bash
+ACR_USERNAME=你的AccessKeyID
+ACR_PASSWORD=你的AccessKeySecret
+```
+
+> ⚠️ `.env` 文件已在 `.gitignore` 中，不会提交到 GitHub。
+
+#### 发布流程
 
 ```bash
 # 1. 代码修改并测试通过后，提交到 GitHub
@@ -464,9 +479,26 @@ git add . && git commit -m "feat: 新功能" && git push
 # 2. 构建并推送到阿里云镜像仓库（自动递增版本号）
 bash push.sh
 
-# 3. 别人更新
+# 或指定版本号
+bash push.sh 1.3
+```
+
+**push.sh 脚本会自动：**
+- 检测阿里云登录状态，未登录则自动登录
+- 构建前后端镜像，同时打 `latest` 和版本号（如 `v1.2`）两个标签
+- 推送到阿里云 ACR（国内 CDN 加速）
+- 更新 `VERSIONS.md` 版本记录并自动提交
+
+#### 别人更新
+
+```bash
+# 拉取最新版本
 docker compose -f docker-compose.pull.yml pull
 docker compose -f docker-compose.pull.yml up -d
+
+# 拉取指定版本（如 v1.1）
+BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml pull
+BACKEND_TAG=v1.1 FRONTEND_TAG=v1.1 docker compose -f docker-compose.pull.yml up -d
 ```
 
 ### 数据库操作
