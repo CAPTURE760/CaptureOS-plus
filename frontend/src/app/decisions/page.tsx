@@ -243,8 +243,8 @@ export default function DecisionsPage() {
         statusFilters={decisionStatusOptions.map(o => ({ value: o.value, label: o.label }))}
         activeStatus={filterStatus}
         onStatusChange={(s) => { setFilterStatus(s); setPage(1); }}
-        filteredCount={filterStatus || filterPriority ? total : undefined}
-        totalCount={filterStatus || filterPriority ? (allCountData?.count ?? total) : undefined}
+        filteredCount={filterStatus ? total : undefined}
+        totalCount={filterStatus ? (allCountData?.count ?? total) : undefined}
       />
 
       <EntityList entityType="decision"
