@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from './Toast';
 
 const ENTITY_OPTIONS = [
   { key: 'projects', label: '📁 项目', icon: '📁' },
@@ -21,6 +22,7 @@ interface ExportButtonProps {
 }
 
 export default function ExportButton({ entityType, variant = 'small', className = '' }: ExportButtonProps) {
+  const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(
@@ -70,8 +72,9 @@ export default function ExportButton({ entityType, variant = 'small', className 
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
+      toast('导出成功', 'success');
     } catch (e) {
-      alert('导出失败，请重试');
+      toast('导出失败，请重试', 'error');
     } finally {
       setExporting(false);
       setShowModal(false);

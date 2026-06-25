@@ -9,6 +9,9 @@ import ExportButton from '@/components/ExportButton';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
+import Loading from '@/components/Loading';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { useToast } from '@/components/Toast';
 
 interface Experience {
   id: number;
@@ -77,6 +80,8 @@ const PAGE_SIZE = 20;
 
 export default function ExperiencesPage() {
   const router = useRouter();
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const skip = (page - 1) * PAGE_SIZE;
   const { data, error, isLoading, mutate } = useSWR<Experience[]>(
@@ -107,13 +112,20 @@ export default function ExperiencesPage() {
   };
 
   const handleBatchDelete = async () => {
-    if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
+    const ok = await confirm({
+      title: '批量删除',
+      message: `确定要删除选中的 ${selectedIds.size} 条记录吗？此操作不可撤销。`,
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
     await Promise.all(Array.from(selectedIds).map(id =>
       fetchAPI(`/experiences/${id}`, { method: 'DELETE' })
     ));
     setSelectedIds(new Set());
     mutate();
     globalMutate('/experiences/count/');
+    toast(`已删除 ${selectedIds.size} 条记录`, 'success');
   };
 
   const handleBatchTag = async (tagId: number) => {
@@ -147,7 +159,7 @@ export default function ExperiencesPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('导出失败，请重试');
+      toast('导出失败，请重试', 'error');
     }
   };
 
@@ -171,19 +183,26 @@ export default function ExperiencesPage() {
     globalMutate('/experiences/count/');
     globalMutate('/dashboard/');
     globalMutate('/dashboard/counts');
+    toast(editingItem ? '经验已更新' : '经验已创建', 'success');
   };
 
   const handleDelete = async (item: Experience) => {
-    if (confirm(`确定要删除 "${item.title}" 吗？`)) {
-      await fetchAPI(`/experiences/${item.id}`, { method: 'DELETE' });
-      mutate();
-      globalMutate('/experiences/count/');
-      globalMutate('/dashboard/');
+    const ok = await confirm({
+      title: '删除经验',
+      message: `确定要删除 "${item.title}" 吗？此操作不可撤销。`,
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    await fetchAPI(`/experiences/${item.id}`, { method: 'DELETE' });
+    mutate();
+    globalMutate('/experiences/count/');
+    globalMutate('/dashboard/');
     globalMutate('/dashboard/counts');
-    }
+    toast('经验已删除', 'success');
   };
 
-  if (isLoading) return <div className="text-center py-8">加载中...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
 
   return (

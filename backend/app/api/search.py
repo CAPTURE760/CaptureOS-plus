@@ -82,11 +82,17 @@ async def search(
                 if end_date and item_date > end_date:
                     continue
 
+            # 获取创建时间
+            created_at = None
+            if hasattr(item, "created_at") and item.created_at:
+                created_at = item.created_at.isoformat()
+
             results.append({
                 "entity_type": etype,
                 "entity_id": item.id,
                 "title": item.title,
                 "snippet": _get_snippet(item, search_fields, q) if q else "",
+                "created_at": created_at,
             })
 
     return {"query": q or "", "results": results, "total": len(results)}

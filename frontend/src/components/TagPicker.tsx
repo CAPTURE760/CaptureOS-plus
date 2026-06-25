@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { useConfirm } from './ConfirmDialog';
+import { useToast } from './Toast';
 
 interface Tag {
   id: number;
@@ -62,6 +64,8 @@ function TagBlockSmall({ tag, onClick, removable }: {
 
 export default function TagPicker({ entityType, entityId, onClose, onUpdated }: TagPickerProps) {
   const { data: allTags, mutate: mutateTags } = useSWR<Tag[]>('/tags/', fetchAPI);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   // 获取实体的标签关系（EntityTag[]）
   const { data: entityTagRelations, mutate: mutateEntityTags } = useSWR<EntityTag[]>(
@@ -97,15 +101,22 @@ export default function TagPicker({ entityType, entityId, onClose, onUpdated }: 
     setSelectedTagId('');
     mutateEntityTags();
     onUpdated();
+    toast('标签已添加', 'success');
   };
 
   // 移除标签
   const handleRemove = async (entityTagId: number, tagName: string) => {
-    if (confirm(`确定要移除标签 "${tagName}" 吗？`)) {
-      await fetchAPI(`/tags/unassign/${entityTagId}`, { method: 'DELETE' });
-      mutateEntityTags();
-      onUpdated();
-    }
+    const ok = await confirm({
+      title: '移除标签',
+      message: `确定要移除标签 "${tagName}" 吗？`,
+      confirmText: '确定移除',
+      variant: 'warning',
+    });
+    if (!ok) return;
+    await fetchAPI(`/tags/unassign/${entityTagId}`, { method: 'DELETE' });
+    mutateEntityTags();
+    onUpdated();
+    toast('标签已移除', 'success');
   };
 
   return (

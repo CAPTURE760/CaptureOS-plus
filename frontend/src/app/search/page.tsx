@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime } from '@/lib/time';
 
 interface Tag {
   id: number;
@@ -17,6 +18,7 @@ interface SearchResult {
   entity_id: number;
   title: string;
   snippet: string;
+  created_at: string | null;
 }
 
 interface SearchResponse {
@@ -203,9 +205,12 @@ function SearchResultItem({ result, query }: { result: SearchResult; query: stri
       onClick={() => router.push(`${entityRoutes[result.entity_type]}/${result.entity_id}`)}
       className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
     >
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center justify-between mb-1">
         <span className={`px-2 py-0.5 rounded text-xs ${entityColors[result.entity_type]}`}>
           {entityLabels[result.entity_type]}
+        </span>
+        <span className="text-gray-500 text-xs whitespace-nowrap">
+          🕐 {formatBeijingTime(result.created_at)}
         </span>
       </div>
       <h3 className="font-medium mb-1"><HighlightText text={result.title} query={query} /></h3>

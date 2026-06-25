@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import Loading from '@/components/Loading';
 
 interface TimelineEvent {
   entity_type: string;
@@ -140,7 +141,7 @@ export default function TimelinePage() {
 
       {/* Timeline */}
       {isLoading ? (
-        <div className="text-center py-8">加载中...</div>
+        <Loading />
       ) : error ? (
         <div className="text-center py-8 text-red-600">加载失败</div>
       ) : !filteredData?.length ? (

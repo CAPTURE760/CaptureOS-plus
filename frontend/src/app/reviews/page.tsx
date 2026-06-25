@@ -9,6 +9,9 @@ import ExportButton from '@/components/ExportButton';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
+import Loading from '@/components/Loading';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { useToast } from '@/components/Toast';
 
 interface Review {
   id: number;
@@ -86,6 +89,8 @@ const PAGE_SIZE = 20;
 
 export default function ReviewsPage() {
   const router = useRouter();
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const skip = (page - 1) * PAGE_SIZE;
   const { data, error, isLoading, mutate } = useSWR<Review[]>(
@@ -116,13 +121,20 @@ export default function ReviewsPage() {
   };
 
   const handleBatchDelete = async () => {
-    if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
+    const ok = await confirm({
+      title: '批量删除',
+      message: `确定要删除选中的 ${selectedIds.size} 条记录吗？此操作不可撤销。`,
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
     await Promise.all(Array.from(selectedIds).map(id =>
       fetchAPI(`/reviews/${id}`, { method: 'DELETE' })
     ));
     setSelectedIds(new Set());
     mutate();
     globalMutate('/reviews/count/');
+    toast(`已删除 ${selectedIds.size} 条记录`, 'success');
   };
 
   const handleBatchTag = async (tagId: number) => {
@@ -156,7 +168,7 @@ export default function ReviewsPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('导出失败，请重试');
+      toast('导出失败，请重试', 'error');
     }
   };
 
@@ -180,19 +192,26 @@ export default function ReviewsPage() {
     globalMutate('/reviews/count/');
     globalMutate('/dashboard/');
     globalMutate('/dashboard/counts');
+    toast(editingItem ? '复盘已更新' : '复盘已创建', 'success');
   };
 
   const handleDelete = async (item: Review) => {
-    if (confirm(`确定要删除 "${item.title}" 吗？`)) {
-      await fetchAPI(`/reviews/${item.id}`, { method: 'DELETE' });
-      mutate();
-      globalMutate('/reviews/count/');
-      globalMutate('/dashboard/');
+    const ok = await confirm({
+      title: '删除复盘',
+      message: `确定要删除 "${item.title}" 吗？此操作不可撤销。`,
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    await fetchAPI(`/reviews/${item.id}`, { method: 'DELETE' });
+    mutate();
+    globalMutate('/reviews/count/');
+    globalMutate('/dashboard/');
     globalMutate('/dashboard/counts');
-    }
+    toast('复盘已删除', 'success');
   };
 
-  if (isLoading) return <div className="text-center py-8">加载中...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
 
   return (

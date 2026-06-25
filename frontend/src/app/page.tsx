@@ -6,6 +6,8 @@ import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
 import ExportButton from '@/components/ExportButton';
+import Loading from '@/components/Loading';
+import { useToast } from '@/components/Toast';
 
 interface PendingItem {
   id: number;
@@ -84,6 +86,7 @@ const IMPORT_ENTITY_LABELS: Record<string, string> = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,7 +100,7 @@ export default function DashboardPage() {
       const text = await file.text();
       const json = JSON.parse(text);
       if (!json.data) {
-        alert('文件格式不正确，缺少 data 字段');
+        toast('文件格式不正确，缺少 data 字段', 'error');
         return;
       }
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -109,16 +112,17 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error('导入失败');
       const result: ImportResult = await res.json();
       setImportResult(result);
-      mutate(); // 刷新仪表盘数据
+      mutate();
+      toast('导入成功！', 'success');
     } catch (e) {
-      alert('导入失败，请检查文件格式');
+      toast('导入失败，请检查文件格式', 'error');
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  if (isLoading) return <div className="text-center py-8">加载中...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
 
   const pending = data?.pending || { issues: [], decisions: [], knowledge: [] };

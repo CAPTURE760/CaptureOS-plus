@@ -9,6 +9,9 @@ import ExportButton from '@/components/ExportButton';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
 import Pagination from '@/components/Pagination';
+import Loading from '@/components/Loading';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { useToast } from '@/components/Toast';
 
 interface Solution {
   id: number;
@@ -80,6 +83,8 @@ export default function SolutionsPage() {
   );
   const { data: countData } = useSWR<{ count: number }>('/solutions/count/', fetchAPI);
   const { mutate: globalMutate } = useSWRConfig();
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Solution | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -103,13 +108,20 @@ export default function SolutionsPage() {
   };
 
   const handleBatchDelete = async () => {
-    if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
+    const ok = await confirm({
+      title: '批量删除',
+      message: `确定要删除选中的 ${selectedIds.size} 条记录吗？此操作不可撤销。`,
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
     await Promise.all(Array.from(selectedIds).map(id =>
       fetchAPI(`/solutions/${id}`, { method: 'DELETE' })
     ));
     setSelectedIds(new Set());
     mutate();
     globalMutate('/solutions/count/');
+    toast(`已删除 ${selectedIds.size} 条记录`, 'success');
   };
 
   const handleBatchTag = async (tagId: number) => {
@@ -143,7 +155,7 @@ export default function SolutionsPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('导出失败，请重试');
+      toast('导出失败，请重试', 'error');
     }
   };
 
@@ -171,19 +183,26 @@ export default function SolutionsPage() {
     globalMutate('/solutions/count/');
     globalMutate('/dashboard/');
     globalMutate('/dashboard/counts');
+    toast(editingItem ? '方案已更新' : '方案已创建', 'success');
   };
 
   const handleDelete = async (item: Solution) => {
-    if (confirm(`确定要删除 "${item.title}" 吗？`)) {
-      await fetchAPI(`/solutions/${item.id}`, { method: 'DELETE' });
-      mutate();
-      globalMutate('/solutions/count/');
-      globalMutate('/dashboard/');
+    const ok = await confirm({
+      title: '删除方案',
+      message: `确定要删除 "${item.title}" 吗？此操作不可撤销。`,
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    await fetchAPI(`/solutions/${item.id}`, { method: 'DELETE' });
+    mutate();
+    globalMutate('/solutions/count/');
+    globalMutate('/dashboard/');
     globalMutate('/dashboard/counts');
-    }
+    toast('方案已删除', 'success');
   };
 
-  if (isLoading) return <div className="text-center py-8">加载中...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
 
   return (

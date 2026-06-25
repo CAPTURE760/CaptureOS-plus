@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
+import { formatBeijingTime } from '@/lib/time';
 import TagPicker from './TagPicker';
 import RelationPicker from './RelationPicker';
 import SuggestionBar from './SuggestionBar';
+import { useConfirm } from './ConfirmDialog';
+import { useToast } from './Toast';
 
 interface Tag {
   id: number;
@@ -116,6 +119,8 @@ const RELATION_LABELS: Record<string, string> = {
 export default function EntityDetail({
   entityType, entityId, entity, onBack, onEdit, onDelete,
 }: EntityDetailProps) {
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showRelationPicker, setShowRelationPicker] = useState(false);
   const [relationTargetType, setRelationTargetType] = useState('');
@@ -138,10 +143,16 @@ export default function EntityDetail({
     .filter(Boolean) || [];
 
   const handleDeleteRelation = async (relationId: number) => {
-    if (confirm('确定要移除这个关联吗？')) {
-      await fetchAPI(`/relations/${relationId}`, { method: 'DELETE' });
-      mutateRelated();
-    }
+    const ok = await confirm({
+      title: '移除关联',
+      message: '确定要移除这个关联吗？',
+      confirmText: '确定移除',
+      variant: 'warning',
+    });
+    if (!ok) return;
+    await fetchAPI(`/relations/${relationId}`, { method: 'DELETE' });
+    mutateRelated();
+    toast('关联已移除', 'success');
   };
 
   const openRelationPicker = (targetType: string) => {
@@ -153,7 +164,7 @@ export default function EntityDetail({
   const renderField = (key: string, value: unknown) => {
     if (value === null || value === undefined || value === '') return <span className="text-gray-400">-</span>;
     if (key.includes('date') || key === 'created_at' || key === 'updated_at') {
-      return new Date(value as string).toLocaleDateString('zh-CN');
+      return formatBeijingTime(value as string);
     }
     if (key === 'status') {
       const statusMap: Record<string, { label: string; color: string }> = {

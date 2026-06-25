@@ -6,6 +6,9 @@ import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import EntityDetail from '@/components/EntityDetail';
 import EntityForm from '@/components/EntityForm';
+import Loading from '@/components/Loading';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { useToast } from '@/components/Toast';
 
 const fields = [
   { name: 'title', label: '标题', required: true },
@@ -31,10 +34,16 @@ export default function SolutionDetailPage() {
   const { data: entity, error, isLoading, mutate } = useSWR(`/solutions/${id}`, fetchAPI);
 
   const handleDelete = async () => {
-    if (confirm('确定要删除这个方案吗？')) {
-      await fetchAPI(`/solutions/${id}`, { method: 'DELETE' });
-      router.push('/solutions');
-    }
+    const ok = await confirm({
+      title: '删除方案',
+      message: '确定要删除这个方案吗？此操作不可撤销。',
+      confirmText: '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    await fetchAPI(`/solutions/${id}`, { method: 'DELETE' });
+    toast('方案已删除', 'success');
+    router.push('/solutions');
   };
 
   const handleEdit = async (formData: Record<string, unknown>) => {
@@ -44,9 +53,10 @@ export default function SolutionDetailPage() {
     await fetchAPI(`/solutions/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
     setShowEdit(false);
     mutate();
+    toast('方案已更新', 'success');
   };
 
-  if (isLoading) return <div className="text-center py-8">加载中...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
   if (!entity) return <div className="text-center py-8 text-gray-500">未找到</div>;
 

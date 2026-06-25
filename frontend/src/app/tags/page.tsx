@@ -6,6 +6,9 @@ import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
 import EntityList from '@/components/EntityList';
 import EntityForm from '@/components/EntityForm';
+import Loading from '@/components/Loading';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { useToast } from '@/components/Toast';
 
 interface Tag {
   id: number;
@@ -135,11 +138,12 @@ const columns = [
 
 export default function TagsPage() {
   const { data, error, isLoading, mutate } = useSWR<Tag[]>('/tags/', fetchAPI);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Tag | null>(null);
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
-    // 转换 level 为整数
     const submitData = {
       ...formData,
       level: Number(formData.level) || 1,
@@ -158,24 +162,27 @@ export default function TagsPage() {
     setShowForm(false);
     setEditingItem(null);
     mutate();
+    toast(editingItem ? '标签已更新' : '标签已创建', 'success');
   };
 
   const handleDelete = async (item: Tag) => {
-    // 获取关联数量
     const { count } = await fetchAPI<{ count: number }>(`/tags/${item.id}/entity-count`);
 
-    let message = `确定要删除标签 "${item.name}" 吗？`;
-    if (count > 0) {
-      message = `标签 "${item.name}" 已关联 ${count} 个实体。\n\n点击"确定"将停用此标签（保留历史数据），点击"取消"放弃操作。`;
-    }
-
-    if (confirm(message)) {
-      await fetchAPI(`/tags/${item.id}`, { method: 'DELETE' });
-      mutate();
-    }
+    const ok = await confirm({
+      title: '删除标签',
+      message: count > 0
+        ? `标签 "${item.name}" 已关联 ${count} 个实体，确定要停用此标签吗？`
+        : `确定要删除标签 "${item.name}" 吗？`,
+      confirmText: count > 0 ? '确定停用' : '确定删除',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    await fetchAPI(`/tags/${item.id}`, { method: 'DELETE' });
+    mutate();
+    toast('标签已删除', 'success');
   };
 
-  if (isLoading) return <div className="text-center py-8">加载中...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div className="text-center py-8 text-red-600">加载失败</div>;
 
   return (
