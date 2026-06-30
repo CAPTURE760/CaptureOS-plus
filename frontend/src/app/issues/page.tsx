@@ -148,6 +148,25 @@ export default function IssuesPage() {
     mutate();
   };
 
+  const handleBatchStatus = async (status: string) => {
+    const label = statusLabelMap[status] || status;
+    const ok = await confirm({
+      title: '批量改状态',
+      message: `确定要将选中的 ${selectedIds.size} 条记录状态改为「${label}」吗？`,
+      confirmText: '确定修改',
+    });
+    if (!ok) return;
+    await Promise.all(Array.from(selectedIds).map(id =>
+      fetchAPI(`/issues/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      })
+    ));
+    setSelectedIds(new Set());
+    mutate();
+    toast(`已将 ${selectedIds.size} 条记录状态改为「${label}」`, 'success');
+  };
+
   const handleBatchExport = async () => {
     try {
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -271,6 +290,8 @@ export default function IssuesPage() {
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
         onBatchExport={handleBatchExport}
+        onBatchStatus={handleBatchStatus}
+        statusOptions={issueStatusOptions}
       />
 
       <Pagination page={page} total={total} pageSize={PAGE_SIZE} onPageChange={setPage} />

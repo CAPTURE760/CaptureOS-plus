@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
 import TagPicker from './TagPicker';
@@ -41,6 +41,8 @@ interface EntityListProps<T> {
   onBatchDelete?: () => void;
   onBatchTag?: (tagId: number) => void;
   onBatchExport?: () => void;
+  onBatchStatus?: (status: string) => void;
+  statusOptions?: { value: string; label: string }[];
   // 手机端卡片显示的列 key，不传则自动选前 2 列（跳过最后一列如创建时间）
   mobileKeys?: string[];
 }
@@ -87,10 +89,31 @@ export default function EntityList<T extends { id: number }>({
   onBatchDelete,
   onBatchTag,
   onBatchExport,
+  onBatchStatus,
+  statusOptions,
   mobileKeys,
 }: EntityListProps<T>) {
   const [tagPickerItem, setTagPickerItem] = useState<T | null>(null);
   const [showBatchTag, setShowBatchTag] = useState(false);
+  const [showBatchStatus, setShowBatchStatus] = useState(false);
+  const batchTagRef = useRef<HTMLDivElement>(null);
+  const batchStatusRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (batchTagRef.current && !batchTagRef.current.contains(e.target as Node)) {
+        setShowBatchTag(false);
+      }
+      if (batchStatusRef.current && !batchStatusRef.current.contains(e.target as Node)) {
+        setShowBatchStatus(false);
+      }
+    };
+    if (showBatchTag || showBatchStatus) {
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }
+  }, [showBatchTag, showBatchStatus]);
   const { data: allTags } = useSWR<Tag[]>('/tags/', fetchAPI, {
     dedupingInterval: 60000, // 标签数据很少变，60 秒内不去重
     revalidateOnFocus: false,
@@ -101,7 +124,7 @@ export default function EntityList<T extends { id: number }>({
     { dedupingInterval: 30000 }
   );
 
-  const hasBatchActions = !!onBatchDelete || !!onBatchTag || !!onBatchExport;
+  const hasBatchActions = !!onBatchDelete || !!onBatchTag || !!onBatchExport || !!onBatchStatus;
   const selectedCount = selectedIds?.size || 0;
   const allSelected = data.length > 0 && data.every(item => selectedIds?.has(item.id));
 
@@ -342,9 +365,9 @@ export default function EntityList<T extends { id: number }>({
 
       {/* 批量操作栏 */}
       {hasBatchActions && selectedCount > 0 && (
-        <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center gap-4">
+        <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <span className="text-sm text-blue-700 font-medium">已选 {selectedCount} 条</span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {onBatchDelete && (
               <button
                 onClick={onBatchDelete}
@@ -354,7 +377,7 @@ export default function EntityList<T extends { id: number }>({
               </button>
             )}
             {onBatchTag && (
-              <div className="relative">
+              <div ref={batchTagRef} className="relative">
                 <button
                   onClick={() => setShowBatchTag(!showBatchTag)}
                   className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
@@ -383,6 +406,32 @@ export default function EntityList<T extends { id: number }>({
                 )}
               </div>
             )}
+            {onBatchStatus && statusOptions && (
+              <div ref={batchStatusRef} className="relative">
+                <button
+                  onClick={() => setShowBatchStatus(!showBatchStatus)}
+                  className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700"
+                >
+                  🔄 批量改状态
+                </button>
+                {showBatchStatus && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg z-10 w-48 max-h-60 overflow-y-auto">
+                    {statusOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          onBatchStatus(opt.value);
+                          setShowBatchStatus(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {onBatchExport && (
               <button
                 onClick={onBatchExport}
@@ -394,7 +443,7 @@ export default function EntityList<T extends { id: number }>({
           </div>
           <button
             onClick={() => onSelect?.(-1)}
-            className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+            className="sm:ml-auto text-sm text-gray-500 hover:text-gray-700"
           >
             取消选择
           </button>
