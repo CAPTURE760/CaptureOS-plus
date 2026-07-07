@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings",
     "python-dotenv",
     "python-docx",
+    "python-multipart",
 ]
 
 [tool.setuptools.packages.find]

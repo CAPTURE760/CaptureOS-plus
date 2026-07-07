@@ -26,6 +26,7 @@ class ReviewBase(BaseModel):
     rating: Optional[int] = None
     period: Optional[str] = None
     review_date: Optional[datetime] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("review_date", mode="before")
     @classmethod
@@ -52,6 +53,7 @@ class ReviewUpdate(BaseModel):
     rating: Optional[int] = None
     period: Optional[str] = None
     review_date: Optional[datetime] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("rating")
     @classmethod

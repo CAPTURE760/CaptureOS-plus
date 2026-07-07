@@ -11,6 +11,7 @@ class KnowledgeBase(BaseModel):
     source: Optional[str] = None
     confidence: Optional[int] = None
     status: str = "unverified"
+    attachments: Optional[list[dict]] = None
 
 
 class KnowledgeCreate(KnowledgeBase):
@@ -24,6 +25,7 @@ class KnowledgeUpdate(BaseModel):
     source: Optional[str] = None
     confidence: Optional[int] = None
     status: Optional[str] = None
+    attachments: Optional[list[dict]] = None
 
 
 class KnowledgeResponse(KnowledgeBase):

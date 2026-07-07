@@ -24,6 +24,7 @@ class ExperienceBase(BaseModel):
     result: Optional[str] = None
     lesson: Optional[str] = None
     event_date: Optional[datetime] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("event_date", mode="before")
     @classmethod
@@ -42,6 +43,7 @@ class ExperienceUpdate(BaseModel):
     result: Optional[str] = None
     lesson: Optional[str] = None
     event_date: Optional[datetime] = None
+    attachments: Optional[list[dict]] = None
 
 
 class ExperienceResponse(ExperienceBase):

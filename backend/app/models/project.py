@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import DateTime, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -21,6 +21,7 @@ class Project(Base):
     tool: Mapped[str | None] = mapped_column(String(50), nullable=True)
     run_command: Mapped[str | None] = mapped_column(Text, nullable=True)
     tech_stack: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    attachments: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

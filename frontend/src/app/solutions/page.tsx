@@ -38,6 +38,7 @@ const fields = [
     { value: '5', label: '⭐⭐⭐⭐⭐ 5 - 非常有效' },
   ]},
   { name: 'implemented_date', label: '实施时间', type: 'datetime-local' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 const columns = [

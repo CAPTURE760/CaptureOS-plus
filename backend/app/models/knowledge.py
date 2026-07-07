@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, SmallInteger, String, Text, func
+from sqlalchemy import DateTime, JSON, SmallInteger, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,6 +16,7 @@ class Knowledge(Base):
     source: Mapped[str | None] = mapped_column(String(200), nullable=True)
     confidence: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     status: Mapped[str] = mapped_column(String(20), server_default="unverified")
+    attachments: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

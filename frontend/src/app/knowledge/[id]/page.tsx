@@ -23,6 +23,7 @@ const fields = [
   { name: 'confidence', label: '置信度 (0-10)', type: 'select' as const,
     options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: `${i} (${i * 10}%)` })),
   },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 export default function KnowledgeDetailPage() {
@@ -30,6 +31,8 @@ export default function KnowledgeDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const [showEdit, setShowEdit] = useState(false);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   const { data: entity, error, isLoading, mutate } = useSWR(`/knowledges/${id}`, fetchAPI);
 

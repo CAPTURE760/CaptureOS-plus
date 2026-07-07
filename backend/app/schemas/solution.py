@@ -24,6 +24,7 @@ class SolutionBase(BaseModel):
     outcome: Optional[str] = None
     effectiveness: Optional[int] = None
     implemented_date: Optional[datetime] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("implemented_date", mode="before")
     @classmethod
@@ -48,6 +49,7 @@ class SolutionUpdate(BaseModel):
     outcome: Optional[str] = None
     effectiveness: Optional[int] = None
     implemented_date: Optional[datetime] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("effectiveness")
     @classmethod

@@ -17,6 +17,7 @@ const fields = [
   { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'lesson', label: '教训', type: 'textarea' as const, rows: 5 },
   { name: 'event_date', label: '事件日期', type: 'date' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 export default function ExperienceDetailPage() {
@@ -24,6 +25,8 @@ export default function ExperienceDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const [showEdit, setShowEdit] = useState(false);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   const { data: entity, error, isLoading, mutate } = useSWR(`/experiences/${id}`, fetchAPI);
 

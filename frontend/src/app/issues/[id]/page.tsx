@@ -34,6 +34,7 @@ const fields = [
   { name: 'root_cause', label: '根本原因', type: 'textarea' as const },
   { name: 'discovered_date', label: '发现日期', type: 'date' as const },
   { name: 'resolved_date', label: '解决日期', type: 'date' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 export default function IssueDetailPage() {

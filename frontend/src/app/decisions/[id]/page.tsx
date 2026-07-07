@@ -25,6 +25,7 @@ const fields = [
   { name: 'confidence', label: '置信度 (0-10)', type: 'select' as const,
     options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: `${i} (${i * 10}%)` })),
   },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 export default function DecisionDetailPage() {

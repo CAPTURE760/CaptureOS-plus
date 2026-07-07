@@ -16,6 +16,7 @@ from app.api.suggestions import router as suggestions_router
 from app.api.export import router as export_router
 from app.api.import_data import router as import_router
 from app.api.export_word import router as export_word_router
+from app.api.upload import router as upload_router
 
 api_router = APIRouter()
 
@@ -35,3 +36,4 @@ api_router.include_router(suggestions_router)
 api_router.include_router(export_router)
 api_router.include_router(import_router)
 api_router.include_router(export_word_router)
+api_router.include_router(upload_router)

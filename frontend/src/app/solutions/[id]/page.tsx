@@ -23,6 +23,7 @@ const fields = [
     { value: '5', label: '⭐⭐⭐⭐⭐ 5 - 非常有效' },
   ]},
   { name: 'implemented_date', label: '实施时间', type: 'datetime-local' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 export default function SolutionDetailPage() {
@@ -30,6 +31,8 @@ export default function SolutionDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const [showEdit, setShowEdit] = useState(false);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   const { data: entity, error, isLoading, mutate } = useSWR(`/solutions/${id}`, fetchAPI);
 

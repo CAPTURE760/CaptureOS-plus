@@ -25,6 +25,7 @@ class IssueBase(BaseModel):
     root_cause: Optional[str] = None
     discovered_date: Optional[datetime] = None
     resolved_date: Optional[date] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("discovered_date", mode="before")
     @classmethod
@@ -44,6 +45,7 @@ class IssueUpdate(BaseModel):
     root_cause: Optional[str] = None
     discovered_date: Optional[datetime] = None
     resolved_date: Optional[date] = None
+    attachments: Optional[list[dict]] = None
 
     @field_validator("discovered_date", mode="before")
     @classmethod

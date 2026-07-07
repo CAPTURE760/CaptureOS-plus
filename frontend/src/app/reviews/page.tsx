@@ -52,6 +52,7 @@ const fields = [
     { value: '临时复盘', label: '📝 临时复盘 — 单次事件' },
   ]},
   { name: 'review_date', label: '复盘时间', type: 'datetime-local' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 const columns = [

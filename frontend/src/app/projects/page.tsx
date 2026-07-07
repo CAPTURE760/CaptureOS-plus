@@ -60,6 +60,7 @@ const fields = [
   },
   { name: 'run_command', label: '运行方式', type: 'textarea' as const, rows: 3, placeholder: 'docker compose up -d 等' },
   { name: 'tech_stack', label: '技术栈', placeholder: 'Next.js, FastAPI, PostgreSQL' },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 const projectStatusLabelMap: Record<string, string> = Object.fromEntries(

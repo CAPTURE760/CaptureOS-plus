@@ -32,6 +32,7 @@ const fields = [
   { name: 'result', label: '结果', type: 'textarea' as const, rows: 5 },
   { name: 'lesson', label: '教训', type: 'textarea' as const, rows: 5 },
   { name: 'event_date', label: '事件时间', type: 'datetime-local' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 const columns = [

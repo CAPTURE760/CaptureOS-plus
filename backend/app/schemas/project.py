@@ -39,6 +39,7 @@ class ProjectBase(BaseModel):
     tool: Optional[str] = None
     run_command: Optional[str] = None
     tech_stack: Optional[str] = None
+    attachments: Optional[list[dict]] = None
 
 
 class ProjectCreate(ProjectBase):
@@ -57,6 +58,7 @@ class ProjectUpdate(BaseModel):
     tool: Optional[str] = None
     run_command: Optional[str] = None
     tech_stack: Optional[str] = None
+    attachments: Optional[list[dict]] = None
 
 
 class ProjectResponse(ProjectBase):

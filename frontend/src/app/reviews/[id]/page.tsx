@@ -28,6 +28,7 @@ const fields = [
     { value: '临时复盘', label: '📝 临时复盘 — 单次事件' },
   ]},
   { name: 'review_date', label: '复盘时间', type: 'datetime-local' as const },
+  { name: 'attachments', label: '附件', type: 'attachments' as const },
 ];
 
 export default function ReviewDetailPage() {
@@ -35,6 +36,8 @@ export default function ReviewDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const [showEdit, setShowEdit] = useState(false);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   const { data: entity, error, isLoading, mutate } = useSWR(`/reviews/${id}`, fetchAPI);
 

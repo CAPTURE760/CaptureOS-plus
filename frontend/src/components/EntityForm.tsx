@@ -1,12 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { renderMarkdown } from '@/lib/markdown';
+import { fetchAPI } from '@/lib/api';
+
+interface Attachment {
+  name: string;
+  url: string;
+  size: number;
+  type?: string;
+}
 
 interface Field {
   name: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'date' | 'datetime-local' | 'number';
+  type?: 'text' | 'textarea' | 'select' | 'date' | 'datetime-local' | 'number' | 'attachments';
   options?: { value: string; label: string }[];
   required?: boolean;
   rows?: number;
@@ -133,6 +141,12 @@ function FormFields({
               rows={field.rows || 4}
               placeholder={`请输入${field.label}...`}
             />
+          ) : field.type === 'attachments' ? (
+            <AttachmentsField
+              name={field.name}
+              value={(formData[field.name] as Attachment[]) || []}
+              onChange={handleChange}
+            />
           ) : field.type === 'select' ? (
             <select
               name={field.name}
@@ -239,6 +253,129 @@ function MarkdownField({
           className="w-full px-3 py-2 border-0 focus:ring-0 resize-y min-h-[80px]"
         />
       )}
+    </div>
+  );
+}
+
+/** 附件上传字段 — 集成在表单中 */
+function AttachmentsField({
+  name, value, onChange,
+}: {
+  name: string;
+  value: Attachment[];
+  onChange: (name: string, value: unknown) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newAttachments = [...value];
+
+    for (const file of Array.from(files)) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const result = await fetchAPI<Attachment>('/upload/', {
+          method: 'POST',
+          headers: {},  // 让浏览器自动设置 Content-Type (multipart/form-data)
+          body: formData,
+        });
+        newAttachments.push(result);
+      } catch (err) {
+        console.error('上传失败:', err);
+      }
+    }
+
+    onChange(name, newAttachments);
+    setUploading(false);
+    // 清空 input 以便重复选择同一文件
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemove = (index: number) => {
+    const newAttachments = value.filter((_, i) => i !== index);
+    onChange(name, newAttachments);
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
+  const getFileIcon = (type?: string, name?: string) => {
+    if (type?.startsWith('image/')) return '🖼️';
+    if (type?.includes('pdf') || name?.endsWith('.pdf')) return '📕';
+    if (type?.includes('word') || type?.includes('document') || name?.endsWith('.docx') || name?.endsWith('.doc')) return '📘';
+    if (type?.includes('excel') || type?.includes('spreadsheet') || name?.endsWith('.xlsx') || name?.endsWith('.xls')) return '📗';
+    if (type?.includes('powerpoint') || type?.includes('presentation') || name?.endsWith('.pptx') || name?.endsWith('.ppt')) return '📙';
+    if (type?.includes('zip') || type?.includes('rar') || type?.includes('gzip')) return '📦';
+    return '📄';
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* 已上传的文件列表 */}
+      {value.length > 0 && (
+        <div className="px-3 py-2 space-y-1">
+          {value.map((file, index) => (
+            <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 rounded px-2 py-1.5">
+              <span className="text-base">{getFileIcon(file.type, file.name)}</span>
+              <a
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 truncate text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {file.name}
+              </a>
+              <span className="text-xs text-gray-400 whitespace-nowrap">{formatSize(file.size)}</span>
+              <button
+                type="button"
+                onClick={() => handleRemove(index)}
+                className="text-gray-400 hover:text-red-500 text-xs px-1"
+                title="删除"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 上传按钮 */}
+      <div className="border-t border-gray-100 px-3 py-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+          id={`file-${name}`}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+        >
+          {uploading ? (
+            <>
+              <span className="animate-spin">⏳</span>
+              <span>上传中...</span>
+            </>
+          ) : (
+            <>
+              <span>📎</span>
+              <span>添加附件</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

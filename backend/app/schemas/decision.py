@@ -26,6 +26,7 @@ class DecisionBase(BaseModel):
     decision_date: Optional[datetime] = None
     confidence: Optional[int] = None
     status: str = "pending"
+    attachments: Optional[list[dict]] = None
 
     @field_validator("decision_date", mode="before")
     @classmethod
@@ -46,6 +47,7 @@ class DecisionUpdate(BaseModel):
     decision_date: Optional[datetime] = None
     confidence: Optional[int] = None
     status: Optional[str] = None
+    attachments: Optional[list[dict]] = None
 
 
 class DecisionResponse(DecisionBase):
