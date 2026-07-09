@@ -38,6 +38,7 @@ interface EntityListProps<T> {
   selectedIds?: Set<number>;
   onSelect?: (id: number) => void;
   onSelectAll?: () => void;
+  onClearSelection?: () => void;
   onBatchDelete?: () => void;
   onBatchTag?: (tagId: number) => void;
   onBatchExport?: () => void;
@@ -86,6 +87,7 @@ export default function EntityList<T extends { id: number }>({
   selectedIds,
   onSelect,
   onSelectAll,
+  onClearSelection,
   onBatchDelete,
   onBatchTag,
   onBatchExport,
@@ -442,10 +444,10 @@ export default function EntityList<T extends { id: number }>({
             )}
           </div>
           <button
-            onClick={() => onSelect?.(-1)}
-            className="sm:ml-auto text-sm text-gray-500 hover:text-gray-700"
+            onClick={() => onClearSelection?.()}
+            className="sm:ml-auto px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
           >
-            取消选择
+            ❌ 取消选择
           </button>
         </div>
       )}

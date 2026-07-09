@@ -4,9 +4,9 @@ import { useState, useRef } from 'react';
 import { renderMarkdown } from '@/lib/markdown';
 import { fetchAPI } from '@/lib/api';
 
-interface Attachment {
+interface PendingFile {
+  file: File;
   name: string;
-  url: string;
   size: number;
   type?: string;
 }
@@ -24,12 +24,17 @@ interface Field {
 
 interface EntityFormProps {
   fields: Field[];
-  onSubmit: (data: Record<string, unknown>) => void;
+  onSubmit: (data: Record<string, unknown>, pendingFiles?: PendingFile[]) => Promise<void> | void;
   onCancel?: () => void;
   initialData?: Record<string, unknown>;
   submitLabel?: string;
   cancelLabel?: string;
   title?: string;
+  entityInfo?: {
+    type?: string;
+    id?: number;
+  };
+  onUploadComplete?: () => void;
 }
 
 export default function EntityForm({
@@ -40,6 +45,8 @@ export default function EntityForm({
   submitLabel = '保存',
   cancelLabel = '取消',
   title,
+  entityInfo,
+  onUploadComplete,
 }: EntityFormProps) {
   // 新建时，date 类型字段默认填今天日期，datetime-local 默认填当前时间
   const getDefaultData = () => {
@@ -58,21 +65,68 @@ export default function EntityForm({
     return data;
   };
   const [formData, setFormData] = useState<Record<string, unknown>>(getDefaultData);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (name: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddPendingFiles = (files: PendingFile[]) => {
+    setPendingFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleRemovePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // 上传待处理的附件到已创建的实体
+  const uploadPendingFiles = async (entityType: string, entityId: number) => {
+    if (pendingFiles.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (const pf of pendingFiles) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', pf.file);
+        formDataObj.append('entity_type', entityType);
+        formDataObj.append('entity_id', entityId.toString());
+
+        await fetchAPI('/upload/to-entity', {
+          method: 'POST',
+          headers: {},  // 让浏览器自动设置 Content-Type (multipart/form-data)
+          body: formDataObj,
+        });
+      }
+      setPendingFiles([]);
+    } catch (err) {
+      console.error('附件上传失败:', err);
+      throw err;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSubmit(formData, pendingFiles);
   };
 
   // 没有 onCancel 时直接渲染表单（兼容旧用法）
   if (!onCancel) {
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormFields fields={fields} formData={formData} handleChange={handleChange} />
+        <FormFields
+          fields={fields}
+          formData={formData}
+          handleChange={handleChange}
+          entityInfo={entityInfo}
+          pendingFiles={pendingFiles}
+          onAddPendingFiles={handleAddPendingFiles}
+          onRemovePendingFile={handleRemovePendingFile}
+          uploading={uploading}
+          onUploadComplete={onUploadComplete}
+        />
         <div className="flex gap-3 pt-2">
           <button type="submit"
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
@@ -97,14 +151,25 @@ export default function EntityForm({
         {/* 表单内容 */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
           <div className="space-y-4">
-            <FormFields fields={fields} formData={formData} handleChange={handleChange} />
+            <FormFields
+              fields={fields}
+              formData={formData}
+              handleChange={handleChange}
+              entityInfo={entityInfo}
+              pendingFiles={pendingFiles}
+              onAddPendingFiles={handleAddPendingFiles}
+              onRemovePendingFile={handleRemovePendingFile}
+              uploading={uploading}
+              onUploadComplete={onUploadComplete}
+            />
           </div>
 
           {/* 按钮固定在底部 */}
           <div className="flex gap-3 pt-6 border-t mt-6">
             <button type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-              <span>✅</span><span>{submitLabel}</span>
+              disabled={uploading}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50">
+              <span>✅</span><span>{uploading ? '上传中...' : submitLabel}</span>
             </button>
             <button type="button" onClick={onCancel}
               className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
@@ -117,13 +182,25 @@ export default function EntityForm({
   );
 }
 
-function FormFields({
-  fields, formData, handleChange,
-}: {
+interface FormFieldsProps {
   fields: Field[];
   formData: Record<string, unknown>;
   handleChange: (name: string, value: unknown) => void;
-}) {
+  entityInfo?: {
+    type?: string;
+    id?: number;
+  };
+  pendingFiles?: PendingFile[];
+  onAddPendingFiles?: (files: PendingFile[]) => void;
+  onRemovePendingFile?: (index: number) => void;
+  uploading?: boolean;
+  onUploadComplete?: () => void;
+}
+
+function FormFields({
+  fields, formData, handleChange, entityInfo,
+  pendingFiles, onAddPendingFiles, onRemovePendingFile, uploading, onUploadComplete,
+}: FormFieldsProps) {
   return (
     <>
       {fields.map((field) => (
@@ -144,8 +221,13 @@ function FormFields({
           ) : field.type === 'attachments' ? (
             <AttachmentsField
               name={field.name}
-              value={(formData[field.name] as Attachment[]) || []}
-              onChange={handleChange}
+              pendingFiles={pendingFiles || []}
+              onAddPendingFiles={onAddPendingFiles || (() => {})}
+              onRemovePendingFile={onRemovePendingFile || (() => {})}
+              entityType={entityInfo?.type || 'project'}
+              entityId={entityInfo?.id}
+              uploading={uploading}
+              onUploadComplete={onUploadComplete}
             />
           ) : field.type === 'select' ? (
             <select
@@ -257,54 +339,94 @@ function MarkdownField({
   );
 }
 
-/** 附件上传字段 — 集成在表单中 */
-function AttachmentsField({
-  name, value, onChange,
-}: {
+/** 附件上传字段 — 集成在表单中，支持即时上传或延迟上传 */
+interface AttachmentsFieldProps {
   name: string;
-  value: Attachment[];
-  onChange: (name: string, value: unknown) => void;
-}) {
+  pendingFiles: PendingFile[];
+  onAddPendingFiles: (files: PendingFile[]) => void;
+  onRemovePendingFile: (index: number) => void;
+  entityType: string;
+  entityId?: number;
+  uploading?: boolean;
+  onUploadComplete?: () => void;
+}
+
+function AttachmentsField({
+  name, pendingFiles, onAddPendingFiles, onRemovePendingFile,
+  entityType, entityId, uploading, onUploadComplete,
+}: AttachmentsFieldProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [instantUploading, setInstantUploading] = useState(false);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
-    const newAttachments = [...value];
-
-    for (const file of Array.from(files)) {
+    // 立即上传文件
+    if (entityId) {
+      setInstantUploading(true);
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const result = await fetchAPI<Attachment>('/upload/', {
-          method: 'POST',
-          headers: {},  // 让浏览器自动设置 Content-Type (multipart/form-data)
-          body: formData,
-        });
-        newAttachments.push(result);
+        for (const file of Array.from(files)) {
+          const formDataObj = new FormData();
+          formDataObj.append('file', file);
+          formDataObj.append('entity_type', entityType);
+          formDataObj.append('entity_id', entityId.toString());
+
+          await fetchAPI('/upload/to-entity', {
+            method: 'POST',
+            headers: {},
+            body: formDataObj,
+          });
+        }
+        // 上传完成后通知父组件刷新
+        if (onUploadComplete) {
+          onUploadComplete();
+        }
       } catch (err) {
         console.error('上传失败:', err);
+      } finally {
+        setInstantUploading(false);
       }
+    } else {
+      // 没有 entityId，暂存文件（新增时使用）
+      const newFiles: PendingFile[] = Array.from(files).map((file) => ({
+        file,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      }));
+      onAddPendingFiles(newFiles);
     }
 
-    onChange(name, newAttachments);
-    setUploading(false);
     // 清空 input 以便重复选择同一文件
     if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleRemove = (index: number) => {
-    const newAttachments = value.filter((_, i) => i !== index);
-    onChange(name, newAttachments);
   };
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes}B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
+  const handleRemoveFile = async (index: number) => {
+    const file = pendingFiles[index];
+    if (!file) return;
+
+    // 如果是已上传的文件（有 id），调用删除 API
+    if ('id' in file && (file as any).id) {
+      try {
+        await fetchAPI(`/file-attachments/${(file as any).id}`, { method: 'DELETE' });
+        // 删除成功后通知父组件刷新
+        if (onUploadComplete) {
+          onUploadComplete();
+        }
+      } catch (err) {
+        console.error('删除文件失败:', err);
+      }
+    }
+
+    // 从列表中移除
+    onRemovePendingFile(index);
   };
 
   const getFileIcon = (type?: string, name?: string) => {
@@ -319,26 +441,21 @@ function AttachmentsField({
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
-      {/* 已上传的文件列表 */}
-      {value.length > 0 && (
+      {/* 待上传的文件列表 */}
+      {pendingFiles.length > 0 && (
         <div className="px-3 py-2 space-y-1">
-          {value.map((file, index) => (
+          {pendingFiles.map((file, index) => (
             <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 rounded px-2 py-1.5">
               <span className="text-base">{getFileIcon(file.type, file.name)}</span>
-              <a
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 truncate text-blue-600 hover:text-blue-800 hover:underline"
-              >
+              <span className="flex-1 truncate text-gray-800">
                 {file.name}
-              </a>
+              </span>
               <span className="text-xs text-gray-400 whitespace-nowrap">{formatSize(file.size)}</span>
               <button
                 type="button"
-                onClick={() => handleRemove(index)}
+                onClick={() => onRemovePendingFile(index)}
                 className="text-gray-400 hover:text-red-500 text-xs px-1"
-                title="删除"
+                title="移除"
               >
                 ×
               </button>
@@ -360,10 +477,10 @@ function AttachmentsField({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
+          disabled={uploading || instantUploading}
           className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
         >
-          {uploading ? (
+          {uploading || instantUploading ? (
             <>
               <span className="animate-spin">⏳</span>
               <span>上传中...</span>

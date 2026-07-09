@@ -15,6 +15,13 @@ import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
 import { projectStatusOptions, priorityOptions, statusBgClass, priorityBgClass } from '@/lib/constants';
 
+interface PendingFile {
+  file: File;
+  name: string;
+  size: number;
+  type?: string;
+}
+
 interface Project {
   id: number;
   title: string;
@@ -231,18 +238,39 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleSubmit = async (formData: Record<string, unknown>) => {
+  const handleSubmit = async (formData: Record<string, unknown>, pendingFiles?: PendingFile[]) => {
+    let entityId: number | undefined;
+
     if (editingItem) {
       await fetchAPI(`/projects/${editingItem.id}`, {
         method: 'PUT',
         body: JSON.stringify(formData),
       });
+      entityId = editingItem.id;
     } else {
-      await fetchAPI('/projects/', {
+      const result = await fetchAPI<{ id: number }>('/projects/', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
+      entityId = result.id;
     }
+
+    // 上传待处理的附件
+    if (pendingFiles && pendingFiles.length > 0 && entityId) {
+      for (const pf of pendingFiles) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', pf.file);
+        formDataObj.append('entity_type', 'project');
+        formDataObj.append('entity_id', entityId.toString());
+
+        await fetchAPI('/upload/to-entity', {
+          method: 'POST',
+          headers: {},
+          body: formDataObj,
+        });
+      }
+    }
+
     setShowForm(false);
     setEditingItem(null);
     mutate();
@@ -298,6 +326,10 @@ export default function ProjectsPage() {
           onCancel={() => { setShowForm(false); setEditingItem(null); }}
           initialData={editingItem || {}}
           title={editingItem ? '✏️ 编辑项目' : '➕ 新建项目'}
+          entityInfo={{
+            type: 'project',
+            id: editingItem?.id
+          }}
         />
       )}
 
@@ -326,6 +358,7 @@ export default function ProjectsPage() {
         selectedIds={selectedIds}
         onSelect={handleSelect}
         onSelectAll={handleSelectAll}
+        onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
         onBatchExport={handleBatchExport}

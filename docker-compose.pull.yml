@@ -5,8 +5,9 @@ services:
       POSTGRES_USER: captureos
       POSTGRES_PASSWORD: captureos
       POSTGRES_DB: captureos
-    ports:
-      - "5432:5432"
+    # 生产环境不暴露数据库端口（仅内部访问）
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,12 +23,22 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://captureos:captureos@db:5432/captureos
       APP_NAME: CaptureOS
-      DEBUG: "true"
+      # 生产环境关闭调试模式
+      DEBUG: "false"
       CORS_ORIGINS: '["http://localhost:3000","http://localhost:8001"]'
     depends_on:
       db:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # 生产环境不使用 --reload（性能和安全考虑）
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    # 添加重启策略
+    restart: unless-stopped
+    # 添加资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
   frontend:
     image: crpi-d5nm65il20pptret.cn-hangzhou.personal.cr.aliyuncs.com/captureos/captureos-frontend:${FRONTEND_TAG:-latest}
@@ -37,6 +48,14 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8001/api
     depends_on:
       - backend
+    # 添加重启策略
+    restart: unless-stopped
+    # 添加资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
 
 volumes:
   postgres_data:

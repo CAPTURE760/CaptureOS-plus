@@ -13,6 +13,13 @@ import FilterBar from '@/components/FilterBar';
 import Loading from '@/components/Loading';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
+
+interface PendingFile {
+  file: File;
+  name: string;
+  size: number;
+  type?: string;
+}
 import { knowledgeStatusOptions, statusBgClass } from '@/lib/constants';
 
 interface Knowledge {
@@ -199,18 +206,39 @@ export default function KnowledgePage() {
 
   const total = countData?.count || 0;
 
-  const handleSubmit = async (formData: Record<string, unknown>) => {
+  const handleSubmit = async (formData: Record<string, unknown>, pendingFiles?: PendingFile[]) => {
+    let entityId: number | undefined;
+
     if (editingItem) {
       await fetchAPI(`/knowledges/${editingItem.id}`, {
         method: 'PUT',
         body: JSON.stringify(formData),
       });
+      entityId = editingItem.id;
     } else {
-      await fetchAPI('/knowledges/', {
+      const result = await fetchAPI<{ id: number }>('/knowledges/', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
+      entityId = result.id;
     }
+
+    // 上传待处理的附件
+    if (pendingFiles && pendingFiles.length > 0 && entityId) {
+      for (const pf of pendingFiles) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', pf.file);
+        formDataObj.append('entity_type', 'knowledge');
+        formDataObj.append('entity_id', entityId.toString());
+
+        await fetchAPI('/upload/to-entity', {
+          method: 'POST',
+          headers: {},
+          body: formDataObj,
+        });
+      }
+    }
+
     setShowForm(false);
     setEditingItem(null);
     mutate();
@@ -266,6 +294,10 @@ export default function KnowledgePage() {
           onCancel={() => { setShowForm(false); setEditingItem(null); }}
           initialData={editingItem || {}}
           title={editingItem ? '✏️ 编辑知识' : '➕ 新建知识'}
+          entityInfo={{
+            type: 'knowledge',
+            id: editingItem?.id
+          }}
         />
       )}
 
@@ -291,6 +323,7 @@ export default function KnowledgePage() {
         selectedIds={selectedIds}
         onSelect={handleSelect}
         onSelectAll={handleSelectAll}
+        onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
         onBatchExport={handleBatchExport}

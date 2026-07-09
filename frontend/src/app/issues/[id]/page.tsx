@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchAPI } from '@/lib/api';
@@ -9,6 +9,13 @@ import EntityForm from '@/components/EntityForm';
 import Loading from '@/components/Loading';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
+
+interface PendingFile {
+  file: File;
+  name: string;
+  size: number;
+  type?: string;
+}
 
 const fields = [
   { name: 'title', label: '标题', required: true },
@@ -44,6 +51,7 @@ export default function IssueDetailPage() {
   const params = useParams();
   const id = Number(params.id);
   const [showEdit, setShowEdit] = useState(false);
+  const filesMutateRef = useRef<(() => void) | null>(null);
 
   const { data: entity, error, isLoading, mutate } = useSWR(`/issues/${id}`, fetchAPI);
 
@@ -60,8 +68,25 @@ export default function IssueDetailPage() {
     router.push('/issues');
   };
 
-  const handleEdit = async (formData: Record<string, unknown>) => {
+  const handleEdit = async (formData: Record<string, unknown>, pendingFiles?: PendingFile[]) => {
     await fetchAPI(`/issues/${id}`, { method: 'PUT', body: JSON.stringify(formData) });
+
+    // 上传待处理的附件
+    if (pendingFiles && pendingFiles.length > 0) {
+      for (const pf of pendingFiles) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', pf.file);
+        formDataObj.append('entity_type', 'issue');
+        formDataObj.append('entity_id', id.toString());
+
+        await fetchAPI('/upload/to-entity', {
+          method: 'POST',
+          headers: {},
+          body: formDataObj,
+        });
+      }
+    }
+
     setShowEdit(false);
     mutate();
     toast('问题已更新', 'success');
@@ -80,6 +105,9 @@ export default function IssueDetailPage() {
         onBack={() => router.push('/issues')}
         onEdit={() => setShowEdit(true)}
         onDelete={handleDelete}
+        onFilesUpdated={(filesMutate) => {
+          filesMutateRef.current = filesMutate;
+        }}
       />
       {showEdit && (
         <EntityForm
@@ -88,6 +116,15 @@ export default function IssueDetailPage() {
           onCancel={() => setShowEdit(false)}
           initialData={entity}
           title="✏️ 编辑问题"
+          entityInfo={{ type: 'issue', id: id }}
+          onUploadComplete={() => {
+            // 刷新实体数据
+            mutate();
+            // 刷新附件列表
+            if (filesMutateRef.current) {
+              filesMutateRef.current();
+            }
+          }}
         />
       )}
     </>

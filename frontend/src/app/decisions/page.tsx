@@ -13,6 +13,13 @@ import FilterBar from '@/components/FilterBar';
 import Loading from '@/components/Loading';
 import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
+
+interface PendingFile {
+  file: File;
+  name: string;
+  size: number;
+  type?: string;
+}
 import { decisionStatusOptions, statusBgClass } from '@/lib/constants';
 
 interface Decision {
@@ -208,18 +215,39 @@ export default function DecisionsPage() {
 
   const total = countData?.count || 0;
 
-  const handleSubmit = async (formData: Record<string, unknown>) => {
+  const handleSubmit = async (formData: Record<string, unknown>, pendingFiles?: PendingFile[]) => {
+    let entityId: number | undefined;
+
     if (editingItem) {
       await fetchAPI(`/decisions/${editingItem.id}`, {
         method: 'PUT',
         body: JSON.stringify(formData),
       });
+      entityId = editingItem.id;
     } else {
-      await fetchAPI('/decisions/', {
+      const result = await fetchAPI<{ id: number }>('/decisions/', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
+      entityId = result.id;
     }
+
+    // 上传待处理的附件
+    if (pendingFiles && pendingFiles.length > 0 && entityId) {
+      for (const pf of pendingFiles) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', pf.file);
+        formDataObj.append('entity_type', 'decision');
+        formDataObj.append('entity_id', entityId.toString());
+
+        await fetchAPI('/upload/to-entity', {
+          method: 'POST',
+          headers: {},
+          body: formDataObj,
+        });
+      }
+    }
+
     setShowForm(false);
     setEditingItem(null);
     mutate();
@@ -275,6 +303,10 @@ export default function DecisionsPage() {
           onCancel={() => { setShowForm(false); setEditingItem(null); }}
           initialData={editingItem || {}}
           title={editingItem ? '✏️ 编辑决策' : '➕ 新建决策'}
+          entityInfo={{
+            type: 'decision',
+            id: editingItem?.id
+          }}
         />
       )}
 
@@ -299,6 +331,7 @@ export default function DecisionsPage() {
         selectedIds={selectedIds}
         onSelect={handleSelect}
         onSelectAll={handleSelectAll}
+        onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
         onBatchExport={handleBatchExport}

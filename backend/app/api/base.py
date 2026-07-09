@@ -38,6 +38,9 @@ def create_crud_router(
             query = query.where(model.status == status)
         if priority is not None and hasattr(model, 'priority'):
             query = query.where(model.priority == priority)
+        # 默认按创建时间倒序排列（最新的在前面）
+        if hasattr(model, 'created_at'):
+            query = query.order_by(model.created_at.desc())
         result = await db.execute(query.offset(skip).limit(limit))
         return result.scalars().all()
 

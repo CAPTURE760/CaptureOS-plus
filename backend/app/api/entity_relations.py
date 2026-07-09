@@ -97,7 +97,29 @@ async def get_related_entities(
     result = await db.execute(query)
     relations = result.scalars().unique().all()
 
-    # 为每个关联获取目标实体的标题
+    # 批量查询所有关联实体的标题（避免N+1查询）
+    other_ids_by_type: dict[str, list[int]] = {}
+    for rel in relations:
+        if rel.source_type == entity_type and rel.source_id == entity_id:
+            other_type = rel.target_type
+            other_id = rel.target_id
+        else:
+            other_type = rel.source_type
+            other_id = rel.source_id
+        other_ids_by_type.setdefault(other_type, []).append(other_id)
+
+    # 批量查询每种类型的标题
+    titles: dict[tuple[str, int], str] = {}
+    for etype, ids in other_ids_by_type.items():
+        model = _get_model(etype)
+        if model:
+            result = await db.execute(
+                select(model.id, model.title).where(model.id.in_(ids))
+            )
+            for row in result.all():
+                titles[(etype, row[0])] = row[1]
+
+    # 构建结果
     enriched = []
     for rel in relations:
         # 确定哪端是"对方"
@@ -108,16 +130,8 @@ async def get_related_entities(
             other_type = rel.source_type
             other_id = rel.source_id
 
-        # 查对方标题
-        model = _get_model(other_type)
-        title = f"{ENTITY_LABELS.get(other_type, other_type)} #{other_id}"
-        if model:
-            title_result = await db.execute(
-                select(model.title).where(model.id == other_id)
-            )
-            title_row = title_result.first()
-            if title_row:
-                title = title_row[0]
+        # 从批量查询结果中获取标题
+        title = titles.get((other_type, other_id), f"{ENTITY_LABELS.get(other_type, other_type)} #{other_id}")
 
         enriched.append({
             "relation_id": rel.id,

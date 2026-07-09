@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import useSWR from 'swr';
+import { useState, useEffect, useRef } from 'react';
+import useSWR, { SWRConfig } from 'swr';
 import { fetchAPI } from '@/lib/api';
 import { formatBeijingTime } from '@/lib/time';
+import { downloadFile } from '@/lib/download';
 import TagPicker from './TagPicker';
 import RelationPicker from './RelationPicker';
 import SuggestionBar from './SuggestionBar';
@@ -47,6 +48,18 @@ interface RelatedResponse {
   by_type: Record<string, Relation[]>;
 }
 
+interface FileAttachment {
+  id: number;
+  entity_type: string;
+  entity_id: number;
+  original_name: string;
+  safe_name: string;
+  file_size: number;
+  content_type: string;
+  url: string;
+  created_at: string;
+}
+
 interface EntityDetailProps {
   entityType: string;
   entityId: number;
@@ -54,6 +67,7 @@ interface EntityDetailProps {
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onFilesUpdated?: (filesMutate: () => void) => void;
 }
 
 // entityType → API 路径前缀（复数）
@@ -117,7 +131,7 @@ const RELATION_LABELS: Record<string, string> = {
 };
 
 export default function EntityDetail({
-  entityType, entityId, entity, onBack, onEdit, onDelete,
+  entityType, entityId, entity, onBack, onEdit, onDelete, onFilesUpdated,
 }: EntityDetailProps) {
   const { confirm } = useConfirm();
   const { toast } = useToast();
@@ -137,10 +151,49 @@ export default function EntityDetail({
     `/${apiPath}/${entityId}/related`, fetchAPI
   );
 
+  // 获取文件附件
+  const { data: filesData, mutate: filesMutate } = useSWR<FileAttachment[]>(
+    `/file-attachments/entity/${entityType}/${entityId}`, fetchAPI
+  );
+
+  // 暴露 filesMutate 给父组件
+  useEffect(() => {
+    if (onFilesUpdated) {
+      onFilesUpdated(filesMutate);
+    }
+  }, [filesMutate]);
+
   const currentTags = entityTags
     ?.filter((et) => et.entity_id === entityId)
     .map((et) => allTags?.find((t) => t.id === et.tag_id))
     .filter(Boolean) || [];
+
+  const handleFileDownload = async (file: FileAttachment) => {
+    try {
+      await downloadFile(file.url, file.original_name, file.safe_name);
+      toast('下载成功', 'success');
+    } catch (error) {
+      toast('下载失败', 'error');
+    }
+  };
+
+  const handleFileDelete = async (fileId: number) => {
+    const ok = await confirm({
+      title: '删除文件',
+      message: '确定要删除这个文件吗？',
+      confirmText: '确定删除',
+      variant: 'warning',
+    });
+    if (!ok) return;
+
+    try {
+      await fetchAPI(`/file-attachments/${fileId}`, { method: 'DELETE' });
+      toast('文件已删除', 'success');
+      filesMutate(); // 刷新文件列表
+    } catch (error) {
+      toast('删除失败', 'error');
+    }
+  };
 
   const handleDeleteRelation = async (relationId: number) => {
     const ok = await confirm({
@@ -310,57 +363,69 @@ export default function EntityDetail({
           </div>
         </div>
 
-        {/* 附件 */}
-        {(() => {
-          const attachments = entity.attachments as { name: string; url: string; size: number; type?: string }[] | null;
-          if (!attachments || attachments.length === 0) return null;
-          const getFileIcon = (type?: string, name?: string) => {
-            if (type?.startsWith('image/')) return '🖼️';
-            if (type?.includes('pdf') || name?.endsWith('.pdf')) return '📕';
-            if (type?.includes('word') || type?.includes('document') || name?.endsWith('.docx') || name?.endsWith('.doc')) return '📘';
-            if (type?.includes('excel') || type?.includes('spreadsheet') || name?.endsWith('.xlsx') || name?.endsWith('.xls')) return '📗';
-            if (type?.includes('powerpoint') || type?.includes('presentation') || name?.endsWith('.pptx') || name?.endsWith('.ppt')) return '📙';
-            if (type?.includes('zip') || type?.includes('rar') || type?.includes('gzip')) return '📦';
-            return '📄';
-          };
-          const formatSize = (bytes: number) => {
-            if (bytes < 1024) return `${bytes}B`;
-            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-            return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-          };
-          return (
-            <div className="border-t pt-4 mt-4">
-              <span className="text-sm font-medium text-gray-500 block mb-2">📎 附件 ({attachments.length})</span>
-              <div className="space-y-1.5">
-                {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors">
-                    <span className="text-base">{getFileIcon(file.type, file.name)}</span>
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 truncate text-blue-600 hover:text-blue-800 hover:underline"
+         {/* 文件附件 */}
+        <div className="border-t pt-4 mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-500">📎 附件 ({filesData?.length || 0})</span>
+          </div>
+
+          {filesData && filesData.length > 0 ? (
+            <div className="space-y-1.5 mt-2">
+              {filesData.map((file) => {
+                const getFileIcon = (type?: string, name?: string) => {
+                  if (type?.startsWith('image/')) return '🖼️';
+                  if (type?.includes('pdf') || name?.endsWith('.pdf')) return '📕';
+                  if (type?.includes('word') || type?.includes('document') || name?.endsWith('.docx') || name?.endsWith('.doc')) return '📘';
+                  if (type?.includes('excel') || type?.includes('spreadsheet') || name?.endsWith('.xlsx') || name?.endsWith('.xls')) return '📗';
+                  if (type?.includes('powerpoint') || type?.includes('presentation') || name?.endsWith('.pptx') || name?.endsWith('.ppt')) return '📙';
+                  if (type?.includes('zip') || type?.includes('rar') || type?.includes('gzip')) return '📦';
+                  return '📄';
+                };
+                const formatSize = (bytes: number) => {
+                  if (bytes < 1024) return `${bytes}B`;
+                  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+                  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+                };
+                return (
+                  <div key={file.id} className="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors">
+                    <span className="text-base">{getFileIcon(file.content_type, file.original_name)}</span>
+                    <span
+                      title={file.original_name}
+                      className="flex-1 truncate text-gray-800"
                     >
-                      {file.name}
-                    </a>
-                    <span className="text-xs text-gray-400 whitespace-nowrap">{formatSize(file.size)}</span>
-                    <a
-                      href={file.url}
-                      download={file.name}
-                      title="下载到本地"
-                      className="flex items-center gap-1 text-xs px-2.5 py-1 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all whitespace-nowrap"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      下载
-                    </a>
+                      {file.original_name}
+                    </span>
+                    <span className="text-xs text-gray-400 whitespace-nowrap">{formatSize(file.file_size)}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleFileDownload(file)}
+                        title="下载到本地"
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all whitespace-nowrap"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        下载
+                      </button>
+                      <button
+                        onClick={() => handleFileDelete(file.id)}
+                        title="删除文件"
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all whitespace-nowrap"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        删除
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          );
-        })()}
+          ) : (
+            <p className="text-sm text-gray-400 mt-2">暂无附件</p>
+          )}
+        </div>
       </div>
 
       {/* 关联实体 */}

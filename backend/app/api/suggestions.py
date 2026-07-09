@@ -94,19 +94,28 @@ async def get_suggestions(
     result = await db.execute(shared_query)
     rows = result.all()
 
-    # 3. 批量获取实体标题
+    # 3. 批量获取实体标题（避免N+1查询）
+    other_ids_by_type: dict[str, list[int]] = {}
+    for row in rows:
+        etype, eid, _, _ = row
+        other_ids_by_type.setdefault(etype, []).append(eid)
+
+    # 批量查询每种类型的标题
+    titles: dict[tuple[str, int], str] = {}
+    for etype, ids in other_ids_by_type.items():
+        model = ENTITY_MODELS.get(etype)
+        if model:
+            result = await db.execute(
+                select(model.id, model.title).where(model.id.in_(ids))
+            )
+            for row in result.all():
+                titles[(etype, row[0])] = row[1]
+
+    # 构建结果
     suggestions = []
     for row in rows:
         etype, eid, shared_count, shared_names = row
-        model = ENTITY_MODELS.get(etype)
-        if not model:
-            continue
-
-        title_result = await db.execute(
-            select(model.title).where(model.id == eid)
-        )
-        title_row = title_result.first()
-        title = title_row[0] if title_row else f"{etype} #{eid}"
+        title = titles.get((etype, eid), f"{etype} #{eid}")
 
         suggestions.append({
             "entity_type": etype,

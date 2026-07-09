@@ -6,6 +6,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.database import async_session
 from app.models.decision import Decision
 from app.models.experience import Experience
 from app.models.issue import Issue
@@ -21,19 +22,20 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 @router.get("/counts")
 async def get_counts(db: AsyncSession = Depends(get_db)):
     """轻量端点：只返回侧边栏角标需要的 3 个数字。"""
-    issues = await db.execute(
+    # 使用单个会话顺序执行（这些查询很快）
+    issues_result = await db.execute(
         select(func.count(Issue.id)).where(Issue.status.in_(["open", "in_progress"]))
     )
-    decisions = await db.execute(
+    decisions_result = await db.execute(
         select(func.count(Decision.id)).where(Decision.status == "pending")
     )
-    knowledge = await db.execute(
+    knowledge_result = await db.execute(
         select(func.count(Knowledge.id)).where(Knowledge.status == "unverified")
     )
     return {
-        "issues": issues.scalar() or 0,
-        "decisions": decisions.scalar() or 0,
-        "knowledge": knowledge.scalar() or 0,
+        "issues": issues_result.scalar() or 0,
+        "decisions": decisions_result.scalar() or 0,
+        "knowledge": knowledge_result.scalar() or 0,
     }
 
 

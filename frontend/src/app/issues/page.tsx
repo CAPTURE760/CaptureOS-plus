@@ -14,6 +14,13 @@ import { useConfirm } from '@/components/ConfirmDialog';
 import { useToast } from '@/components/Toast';
 import { issueStatusOptions, priorityOptions, statusBgClass, priorityBgClass } from '@/lib/constants';
 
+interface PendingFile {
+  file: File;
+  name: string;
+  size: number;
+  type?: string;
+}
+
 interface Issue {
   id: number;
   title: string;
@@ -194,18 +201,39 @@ export default function IssuesPage() {
 
   const total = countData?.count || 0;
 
-  const handleSubmit = async (formData: Record<string, unknown>) => {
+  const handleSubmit = async (formData: Record<string, unknown>, pendingFiles?: PendingFile[]) => {
+    let entityId: number | undefined;
+
     if (editingItem) {
       await fetchAPI(`/issues/${editingItem.id}`, {
         method: 'PUT',
         body: JSON.stringify(formData),
       });
+      entityId = editingItem.id;
     } else {
-      await fetchAPI('/issues/', {
+      const result = await fetchAPI<{ id: number }>('/issues/', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
+      entityId = result.id;
     }
+
+    // 上传待处理的附件
+    if (pendingFiles && pendingFiles.length > 0 && entityId) {
+      for (const pf of pendingFiles) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', pf.file);
+        formDataObj.append('entity_type', 'issue');
+        formDataObj.append('entity_id', entityId.toString());
+
+        await fetchAPI('/upload/to-entity', {
+          method: 'POST',
+          headers: {},
+          body: formDataObj,
+        });
+      }
+    }
+
     setShowForm(false);
     setEditingItem(null);
     mutate();
@@ -260,6 +288,10 @@ export default function IssuesPage() {
           onCancel={() => { setShowForm(false); setEditingItem(null); }}
           initialData={editingItem || {}}
           title={editingItem ? '✏️ 编辑问题' : '➕ 新建问题'}
+          entityInfo={{
+            type: 'issue',
+            id: editingItem?.id
+          }}
         />
       )}
 
@@ -288,6 +320,7 @@ export default function IssuesPage() {
         selectedIds={selectedIds}
         onSelect={handleSelect}
         onSelectAll={handleSelectAll}
+        onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}
         onBatchTag={handleBatchTag}
         onBatchExport={handleBatchExport}
